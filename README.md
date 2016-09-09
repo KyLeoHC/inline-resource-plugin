@@ -1,6 +1,12 @@
 # inline-resource-plugin
 > A webpack plugin to make css/js resource inline in the html with inline-source.
 
+## Install
+
+```bash
+$ npm install inline-resource-plugin --save-dev
+```
+
 ## example
 
 ```html
