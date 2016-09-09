@@ -52,5 +52,7 @@
 	    console.log(word);
 	};
 
+	new Person().sayHello();
+
 /***/ }
 /******/ ]);
