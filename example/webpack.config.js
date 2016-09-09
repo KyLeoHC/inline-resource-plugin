@@ -6,7 +6,7 @@ module.exports = {
     },
     output: {
         path: './build',
-        filename: 'test.js'
+        filename: '[name].js'
     },
     plugins: [
         new InlineResource({
