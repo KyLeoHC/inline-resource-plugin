@@ -10,6 +10,7 @@ $ npm install inline-resource-plugin --save-dev
 ## example
 
 ```html
+<!-- hello.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,6 +28,7 @@ $ npm install inline-resource-plugin --save-dev
 ```
 
 ```js
+/* hello.js */
 function Person() {
 }
 
@@ -37,6 +39,7 @@ Person.prototype.sayHello = function () {
 ```
 
 ```css
+/* hello.css */
 .container {
     border: 1px solid #000000;
 }
@@ -44,6 +47,7 @@ Person.prototype.sayHello = function () {
 
 Output:
 ```html
+<!-- hello.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
