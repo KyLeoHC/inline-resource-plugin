@@ -1,19 +1,18 @@
 var path = require('path');
-var InlineResource = require('./index.js');
+var InlineResource = require('./../index.js');
 
 module.exports = {
     entry: {
-        hello: './test/hello.js'
+        hello: './hello.js'
     },
     output: {
-        path: './test/build',
+        path: './build',
         filename: 'test.js'
     },
     plugins: [
         new InlineResource({
             compress: true,
-            rootpath: path.resolve('test'),
-            list: ['./test/hello.html']
+            list: ['hello.html']
         })
     ]
 };
