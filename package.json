@@ -1,0 +1,26 @@
+{
+  "name": "inline-resource-plugin",
+  "version": "0.0.1",
+  "description": "A webpack plugin to make css/js resource inline in the html.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KyLeoHC/inline-resource-plugin.git"
+  },
+  "keywords": [
+    "inline"
+  ],
+  "author": "KyLeo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/KyLeoHC/inline-resource-plugin/issues"
+  },
+  "homepage": "https://github.com/KyLeoHC/inline-resource-plugin#readme",
+  "devDependencies": {
+    "inline-source": "^5.0.1",
+    "webpack": "^1.13.2"
+  }
+}
