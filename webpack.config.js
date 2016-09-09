@@ -1,19 +1,19 @@
-var webpack = require('webpack');
-var InlineResource = require('./my_node_modules/webpack-inline-resource');
+var path = require('path');
+var InlineResource = require('./index.js');
 
 module.exports = {
     entry: {
-        1: './js/parseTemplate.js'
+        hello: './test/hello.js'
     },
     output: {
-        path: './build',
-        filename: 'app.bundle.js'
+        path: './test/build',
+        filename: 'test.js'
     },
     plugins: [
-        new InlineResource(['./html/testTemplate.html'])/*,
         new InlineResource({
-            root: './html',
-            files: []
-        })*/
+            compress: true,
+            rootpath: path.resolve('test'),
+            list: ['./test/hello.html']
+        })
     ]
 };
