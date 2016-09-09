@@ -23,11 +23,16 @@ InlineResourcePlugin.prototype.doInline = function (options, compilation) {
     options.list.forEach(function (path) {
         var html = inline(path, options),
             name = getFileName(path);
+
+        //Insert this html file into the Webpack build as a new file asset
+        //And webpack will help us generate the new file rather than use fs module to do this by us
         compilation.assets[name] = {
             source: function () {
+                //This is the content of file
                 return html;
             },
             size: function () {
+                //This is the length or size of file
                 return html.length;
             }
         };
