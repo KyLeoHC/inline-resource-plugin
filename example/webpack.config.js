@@ -1,5 +1,4 @@
-var path = require('path');
-var InlineResource = require('./../index.js');
+var InlineResource = require('inline-resource-plugin');
 
 module.exports = {
     entry: {
