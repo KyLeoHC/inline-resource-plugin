@@ -22,8 +22,7 @@
   },
   "homepage": "https://github.com/KyLeoHC/inline-resource-plugin#readme",
   "devDependencies": {
-    "inline-source": "^5.0.1",
-    "webpack": "^1.13.2"
+    "inline-source": "^5.1.1"
   },
   "dependencies": {
     "inline-source": "^5.1.1"

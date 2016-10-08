@@ -1,8 +1,9 @@
 {
   "name": "example",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "devDependencies": {
     "html-webpack-plugin": "^2.22.0",
-    "inline-resource-plugin": "^0.1.0"
+    "inline-resource-plugin": "^0.1.2",
+    "webpack": "^1.13.2"
   }
 }
