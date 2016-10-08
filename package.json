@@ -1,7 +1,7 @@
 {
   "name": "inline-resource-plugin",
   "version": "0.0.4",
-  "description": "A webpack plugin to make css/js resource inline in the html.",
+  "description": "A plugin to make css/js resource inline in the html for webpack.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
