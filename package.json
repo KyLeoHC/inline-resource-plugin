@@ -11,7 +11,9 @@
     "url": "git+https://github.com/KyLeoHC/inline-resource-plugin.git"
   },
   "keywords": [
-    "inline"
+    "inline",
+    "inline css",
+    "inline html"
   ],
   "author": "KyLeo",
   "license": "MIT",
