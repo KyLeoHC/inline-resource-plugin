@@ -10,14 +10,14 @@ $ npm install inline-resource-plugin --save-dev
 ## example
 
 ```html
-<!-- hello.html -->
+<!-- ./build/hello.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>test</title>
-    <link href="hello.css" inline>
-    <script src="hello.js" inline></script>
+    <link href="inline.css" inline>
+    <script src="inline.js" inline></script>
 </head>
 <body>
 <div class="container">
@@ -28,7 +28,7 @@ $ npm install inline-resource-plugin --save-dev
 ```
 
 ```js
-/* hello.js */
+/* ./src/inline.js */
 function Person() {
 }
 
@@ -39,7 +39,7 @@ Person.prototype.sayHello = function () {
 ```
 
 ```css
-/* hello.css */
+/* ./src/inline.css */
 .container {
     border: 1px solid #000000;
 }
@@ -47,7 +47,7 @@ Person.prototype.sayHello = function () {
 
 Output:
 ```html
-<!-- hello.html -->
+<!-- ./build/hello.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -68,25 +68,34 @@ Output:
 
 ```javascript
 //webpack.config.js
+var HtmlWebpackPlugin = require('html-webpack-plugin');
 var InlineResource = require('inline-resource-plugin');
 
 module.exports = {
     entry: {
-        hello: './hello.js'
+        hello: './src/hello.js'
     },
     output: {
         path: './build',
         filename: '[name].js'
     },
     plugins: [
+        new HtmlWebpackPlugin({
+            filename: 'hello.html',
+            template: './src/hello.html',
+            inject: 'body'
+        }),
         new InlineResource({
             compress: true,
+            rootpath: './src',
             //if you have only one html file,this list option can also be a character string.such as
             //list: 'hello.html'
             //it can also be a file path string or file path array.such as
             //list: ['./src/html/hello.html']
-            list: ['hello.html']
+            list: ['./build/hello.html']
         })
     ]
 };
 ```
+
+note: You can find this demo in the example directory.
