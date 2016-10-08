@@ -81,6 +81,10 @@ module.exports = {
     plugins: [
         new InlineResource({
             compress: true,
+            //if you have only one html file,this list option also can be a character string.such as
+            //list: 'hello.html'
+            //it also can be a file path string or file path array.such as
+            //list: ['./src/html/hello.html']
             list: ['hello.html']
         })
     ]
