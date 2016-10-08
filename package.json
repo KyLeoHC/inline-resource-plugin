@@ -1,6 +1,6 @@
 {
   "name": "inline-resource-plugin",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A webpack plugin to make css/js resource inline in the html.",
   "main": "index.js",
   "scripts": {
