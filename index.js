@@ -32,7 +32,7 @@ InlineResourcePlugin.prototype.doInline = function (options) {
                 if (error) {
                     throw error;
                 }
-                fs.writeFile(file, html);
+                fs.writeFileSync(file, html);
             });
         });
     });
