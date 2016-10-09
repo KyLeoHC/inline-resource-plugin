@@ -91,8 +91,11 @@ module.exports = {
             //if you have only one html file,this list option can also be a character string.such as
             //list: 'hello.html'
             //it can also be a file path string or file path array.such as
-            //list: ['./src/html/hello.html']
-            list: ['./build/hello.html']
+            //list: ['./build/hello.html']
+            //or use glob,such as
+            //list: ['./build/*.html']
+            list: ['./build/hello.html'],
+            debug: true
         })
     ]
 };

@@ -22,9 +22,11 @@
   },
   "homepage": "https://github.com/KyLeoHC/inline-resource-plugin#readme",
   "devDependencies": {
+    "glob": "^7.1.1",
     "inline-source": "^5.1.1"
   },
   "dependencies": {
+    "glob": "^7.1.1",
     "inline-source": "^5.1.1"
   }
 }
