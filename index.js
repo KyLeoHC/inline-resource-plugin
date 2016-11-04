@@ -17,7 +17,7 @@ var isArray = function (obj) {
 function InlineResourcePlugin(options) {
     this.options = options || {};
     this.options.list = this.options.list || [];
-    this.options.regx = options.regx || /\.(html)|(ejs)$/i;
+    this.regx = options.regx || /\.(html)|(ejs)$/i;
     this.compilation = null;
 }
 
@@ -31,20 +31,17 @@ InlineResourcePlugin.prototype.generateAssets = function (file, content) {
                 return content.length;
             }
         };
-    } else {
-        fs.writeFileSync(file, content);
     }
 };
 
 InlineResourcePlugin.prototype.inlineByListOpt = function () {
-    var options = this.options,
-        self = this;
+    var options = this.options;
     options.list.forEach(function (pattern) {
         var files = glob.sync(pattern) || [];
         log('+ pattern[' + pattern + '] : ' + files.join(' '));
         files.forEach(function (file) {
             var content = inline(file, options);
-            self.generateAssets(file, content);
+            fs.writeFileSync(file, content);
         });
     });
 };
@@ -53,8 +50,9 @@ InlineResourcePlugin.prototype.inlineByAssetsData = function () {
     var file, content, assets = this.compilation.assets, self = this;
     for (file in assets) {
         if (self.regx.test(file)) {
+            log('+ assets: ' + file);
             content = assets[file].source();
-            content = inline(content, options);
+            content = inline(content, self.options);
             self.generateAssets(file, content);
         }
     }
