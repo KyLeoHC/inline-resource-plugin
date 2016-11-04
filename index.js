@@ -20,6 +20,10 @@ function InlineResourcePlugin(options) {
     this.options.list = !isArray(this.options.list) ? [this.options.list] : this.options.list;
     this.regx = options.regx || /\.(html)|(ejs)$/i;
     this.compilation = null;
+
+    this.dependency = {};
+    this.prevTimestamps = {};
+    this.startTime = Date.now();
 }
 
 InlineResourcePlugin.prototype.generateAssets = function (file, content) {
@@ -35,6 +39,36 @@ InlineResourcePlugin.prototype.generateAssets = function (file, content) {
     }
 };
 
+InlineResourcePlugin.prototype.testDependencyChanged = function () {
+    return this.findChangedFiles().some(function (file) {
+        return !!this.dependency[file];
+    }.bind(this));
+};
+
+InlineResourcePlugin.prototype.findChangedFiles = function () {
+    var compilation = this.compilation;
+    var changedFiles = Object.keys(compilation.fileTimestamps)
+        .filter(function (watchfile) {
+            return (this.prevTimestamps[watchfile] || this.startTime) < (compilation.fileTimestamps[watchfile] || Infinity);
+        }.bind(this));
+    this.prevTimestamps = compilation.fileTimestamps;
+    return changedFiles;
+};
+
+InlineResourcePlugin.prototype.dealWithFile = function (file) {
+    log('+ assets: ' + file);
+    var assets = this.compilation.assets,
+        content = assets[file].source();
+    log('+ assets: ' + file);
+    content = inline(content, Object.assign(self.options, {
+        handlers: function (source) {
+            self.dependency[source.filepath] = file;
+            self.compilation.fileDependencies.push(source.filepath);
+        }
+    }));
+    self.generateAssets(file, content);
+};
+
 InlineResourcePlugin.prototype.inlineByListOpt = function () {
     var options = this.options;
     options.list.forEach(function (pattern) {
@@ -48,14 +82,15 @@ InlineResourcePlugin.prototype.inlineByListOpt = function () {
 };
 
 InlineResourcePlugin.prototype.inlineByAssetsData = function () {
-    var file, content, assets = this.compilation.assets, self = this;
-    for (file in assets) {
-        if (self.regx.test(file)) {
-            log('+ assets: ' + file);
-            content = assets[file].source();
-            content = inline(content, self.options);
-            self.generateAssets(file, content);
+    var file, assets = this.compilation.assets;
+    if (assets.length) {
+        for (file in assets) {
+            if (self.regx.test(file)) {
+                this.dealWithFile(file);
+            }
         }
+    } else {
+
     }
 };
 
