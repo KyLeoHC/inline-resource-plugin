@@ -1,6 +1,6 @@
 'use strict';
 
-var inline = require('inline-source'),
+var inline = require('inline-source').sync,
     colors = require("colors"),
     glob = require("glob"),
     fs = require('fs');
@@ -17,36 +17,70 @@ var isArray = function (obj) {
 function InlineResourcePlugin(options) {
     this.options = options || {};
     this.options.list = this.options.list || [];
+    this.options.regx = options.regx || /\.(html)|(ejs)$/i;
+    this.compilation = null;
 }
 
-InlineResourcePlugin.prototype.doInline = function (options) {
-    if (!isArray(options.list)) {
-        options.list = [options.list];
+InlineResourcePlugin.prototype.generateAssets = function (file, content) {
+    if (this.compilation) {
+        this.compilation.assets[file] = {
+            source: function () {
+                return content;
+            },
+            size: function () {
+                return content.length;
+            }
+        };
+    } else {
+        fs.writeFileSync(file, content);
     }
-    log('start inline resource:');
+};
+
+InlineResourcePlugin.prototype.inlineByListOpt = function () {
+    var options = this.options,
+        self = this;
     options.list.forEach(function (pattern) {
         var files = glob.sync(pattern) || [];
         log('+ pattern[' + pattern + '] : ' + files.join(' '));
         files.forEach(function (file) {
-            inline(file, options, function (error, html) {
-                if (error) {
-                    throw error;
-                }
-                fs.writeFileSync(file, html);
-            });
+            var content = inline(file, options);
+            self.generateAssets(file, content);
         });
     });
+};
+
+InlineResourcePlugin.prototype.inlineByAssetsData = function () {
+    var file, content, assets = this.compilation.assets, self = this;
+    for (file in assets) {
+        if (self.regx.test(file)) {
+            content = assets[file].source();
+            content = inline(content, options);
+            self.generateAssets(file, content);
+        }
+    }
+};
+
+InlineResourcePlugin.prototype.doInline = function (compilation, callback) {
+    if (!isArray(this.options.list)) {
+        this.options.list = [this.options.list];
+    }
+    log('start inline resource:');
+    if (this.options.list.length) {
+        this.inlineByListOpt(compilation);
+    } else {
+        this.inlineByAssetsData();
+    }
     log('finish inline resource:');
+    callback();
 };
 
 InlineResourcePlugin.prototype.apply = function (compiler) {
-    var doInline = this.doInline,
-        options = this.options;
-    debug = options.debug;
-    //only execute after all things are done
-    compiler.plugin('done', function () {
-        doInline(options);
-    });
+    //set global debug flag
+    debug = this.options.debug;
+    compiler.plugin('emit', function (compilation, callback) {
+        this.compilation = compilation;
+        this.doInline(compilation, callback);
+    }.bind(this));
 };
 
 module.exports = InlineResourcePlugin;
