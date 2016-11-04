@@ -24,7 +24,7 @@ module.exports = {
             //list: ['./build/hello.html']
             //or use glob,such as
             //list: ['./build/*.html']
-            //list: ['./build/hello.html'],
+            list: ['./build/hello.html'],
             debug: true
         })
     ]

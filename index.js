@@ -17,6 +17,7 @@ var isArray = function (obj) {
 function InlineResourcePlugin(options) {
     this.options = options || {};
     this.options.list = this.options.list || [];
+    this.options.list = !isArray(this.options.list) ? [this.options.list] : this.options.list;
     this.regx = options.regx || /\.(html)|(ejs)$/i;
     this.compilation = null;
 }
@@ -58,27 +59,26 @@ InlineResourcePlugin.prototype.inlineByAssetsData = function () {
     }
 };
 
-InlineResourcePlugin.prototype.doInline = function (compilation, callback) {
-    if (!isArray(this.options.list)) {
-        this.options.list = [this.options.list];
-    }
+InlineResourcePlugin.prototype.doInline = function (task, callback) {
     log('start inline resource:');
-    if (this.options.list.length) {
-        this.inlineByListOpt(compilation);
-    } else {
-        this.inlineByAssetsData();
-    }
+    task.apply(this);
     log('finish inline resource:');
-    callback();
+    callback && callback();
 };
 
 InlineResourcePlugin.prototype.apply = function (compiler) {
     //set global debug flag
     debug = this.options.debug;
-    compiler.plugin('emit', function (compilation, callback) {
-        this.compilation = compilation;
-        this.doInline(compilation, callback);
-    }.bind(this));
+    if (this.options.list.length) {
+        compiler.plugin('done', function () {
+            this.doInline(this.inlineByListOpt);
+        }.bind(this));
+    } else {
+        compiler.plugin('emit', function (compilation, callback) {
+            this.compilation = compilation;
+            this.doInline(this.inlineByAssetsData, callback);
+        }.bind(this));
+    }
 };
 
 module.exports = InlineResourcePlugin;
