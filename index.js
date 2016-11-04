@@ -70,6 +70,8 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
     //set global debug flag
     debug = this.options.debug;
     if (this.options.list.length) {
+        //if list option is passed
+        //inline task will start during the done lifecycle
         compiler.plugin('done', function () {
             this.doInline(this.inlineByListOpt);
         }.bind(this));
