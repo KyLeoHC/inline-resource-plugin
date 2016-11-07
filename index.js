@@ -2,7 +2,8 @@
 
 var inline = require('inline-source').sync,
     colors = require("colors"),
-    glob = require("glob"),
+    glob = require('glob'),
+    path = require('path'),
     fs = require('fs');
 var debug = false;
 
@@ -14,7 +15,7 @@ function InlineResourcePlugin(options) {
     this.options = options || {};
     this.options.list = this.options.list || [];
     this.options.list = !Array.isArray(this.options.list) ? [this.options.list] : this.options.list;
-    this.regx = options.regx || /\.(html)|(ejs)$/i;
+    this.include = options.include || /\.(html)|(ejs)$/i;
     this.compilation = null;
 
     this.dependency = {};
@@ -39,18 +40,20 @@ InlineResourcePlugin.prototype.findChangedFiles = function () {
 
 InlineResourcePlugin.prototype.dealWithFile = function (file) {
     var assets = this.compilation.assets,
-        content = assets[file] ? assets[file].source() : this.cacheFile[file].source(),
+        fileObj = assets[file] ? assets[file] : this.cacheFile[file],
+        content = fileObj.source(),
         self = this;
     log('+ assets: ' + file);
 
-    //if this is a new file
+    //if this is a new file or rebuild by the other plugins(such as HtmlWebpackPlugin)
     //add it into cache
-    if (!self.cacheFile[file]) {
+    if (!fileObj.isCache) {
         self.cacheFile[file] = (function (content) {
             return {
                 source: function () {
                     return content;
-                }
+                },
+                isCache: true
             };
         })(content);
     }
@@ -69,7 +72,7 @@ InlineResourcePlugin.prototype.dealWithFile = function (file) {
 
     //add it into compilation.assets
     //generate file by webpack
-    self.compilation.assets[file] = {
+    self.compilation.assets[path.parse(file).base] = {
         source: function () {
             return content;
         },
@@ -79,6 +82,9 @@ InlineResourcePlugin.prototype.dealWithFile = function (file) {
     };
 };
 
+/**
+ * read file in the compilation.assets
+ */
 InlineResourcePlugin.prototype.inlineByAssetsData = function () {
     var assets = this.compilation.assets,
         assetsArray = Object.keys(assets),
@@ -86,18 +92,28 @@ InlineResourcePlugin.prototype.inlineByAssetsData = function () {
     assetsArray = assetsArray.concat(self.findChangedFiles());
     assetsArray.forEach(function (file) {
         file = self.dependency[file] ? self.dependency[file] : file;
-        self.regx.test(file) && self.dealWithFile(file);
+        self.include.test(file) && self.dealWithFile(file);
     });
 };
 
+/**
+ * read file in the local file system
+ */
 InlineResourcePlugin.prototype.inlineByListOpt = function () {
-    var options = this.options, files, content;
+    var options = this.options, self = this, files;
     options.list.forEach(function (pattern) {
         files = glob.sync(pattern) || [];
         log('+ pattern[' + pattern + '] : ' + files.join(' '));
         files.forEach(function (file) {
-            content = inline(file, options);
-            fs.writeFileSync(file, content);
+            self.cacheFile[file] = (function (content) {
+                return {
+                    source: function () {
+                        return content;
+                    },
+                    isCache: true
+                };
+            })(fs.readFileSync(file, {encoding: 'utf-8'}));
+            self.dealWithFile(file);
         });
     });
 };
@@ -118,22 +134,17 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
     var self = this;
     //set global debug flag
     debug = this.options.debug;
-    if (this.options.list.length) {
-        //if list option is passed
-        //inline task will start during the done lifecycle
-        //And read file without webpack
-        compiler.plugin('done', function () {
-            self.doInline(self.inlineByListOpt);
-        });
-    } else {
-        //read file in the compilation assets
-        //it is used for working with the other plugins
-        //such as HtmlWebpackPlugin
-        compiler.plugin('emit', function (compilation, callback) {
-            self.compilation = compilation;
+    //read file in the compilation assets
+    //it is used for working with the other plugins
+    //such as HtmlWebpackPlugin
+    compiler.plugin('emit', function (compilation, callback) {
+        self.compilation = compilation;
+        if (self.options.list.length) {
+            self.doInline(self.inlineByListOpt, callback);
+        } else {
             self.doInline(self.inlineByAssetsData, callback);
-        });
-    }
+        }
+    });
 };
 
 module.exports = InlineResourcePlugin;
