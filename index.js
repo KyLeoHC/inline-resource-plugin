@@ -83,7 +83,7 @@ InlineResourcePlugin.prototype.dealWithFile = function (file) {
 };
 
 /**
- * read file in the compilation.assets
+ * read file from compilation.assets
  */
 InlineResourcePlugin.prototype.inlineByAssetsData = function () {
     var assets = this.compilation.assets,
@@ -97,7 +97,7 @@ InlineResourcePlugin.prototype.inlineByAssetsData = function () {
 };
 
 /**
- * read file in the local file system
+ * read file from local file system
  */
 InlineResourcePlugin.prototype.inlineByListOpt = function () {
     var options = this.options, self = this, files;
@@ -134,9 +134,6 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
     var self = this;
     //set global debug flag
     debug = this.options.debug;
-    //read file in the compilation assets
-    //it is used for working with the other plugins
-    //such as HtmlWebpackPlugin
     compiler.plugin('emit', function (compilation, callback) {
         self.compilation = compilation;
         if (self.options.list.length) {
