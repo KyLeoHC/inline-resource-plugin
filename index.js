@@ -15,7 +15,7 @@ function InlineResourcePlugin(options) {
     this.options = options || {};
     this.options.list = this.options.list || [];
     this.options.list = !Array.isArray(this.options.list) ? [this.options.list] : this.options.list;
-    this.include = options.include || /\.(html)|(ejs)$/i;
+    this.include = options.include || /\.html$|\.ejs$/i;
     this.compilation = null;
 
     this.dependency = {};
