@@ -86,7 +86,7 @@ module.exports = {
             inject: 'body'
         }),
         new InlineResource({
-            compress: false,
+            compress: true,
             rootpath: './src',
             //if you have only one html file,this list option can also be a character string.such as
             //list: './src/hello.html'
@@ -94,6 +94,9 @@ module.exports = {
             //list: ['./src/hello.html']
             //or use glob,such as
             //list: ['./src/*.html']
+            //The "list" option is non-required
+            //if you don't pass this option, we will read template from the other plugins(such as HtmlWebpackPlugin)
+            include: /\.(html)|(ejs)$/i,
             debug: true
         })
     ]
