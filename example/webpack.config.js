@@ -17,8 +17,7 @@ module.exports = {
         }),
         new InlineResource({
             compress: true,
-            rootpath: './src',
-            debug: true
+            rootpath: './src'
         })
     ]
 };

@@ -96,8 +96,7 @@ module.exports = {
             //list: ['./src/*.html']
             //The "list" option is non-required
             //if you don't pass this option, we will read template from the other plugins(such as HtmlWebpackPlugin)
-            include: /\.(html)|(ejs)$/i,
-            debug: true
+            include: /\.(html)|(ejs)$/i
         })
     ]
 };

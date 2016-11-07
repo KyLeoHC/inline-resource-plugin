@@ -133,7 +133,7 @@ InlineResourcePlugin.prototype.doInline = function (task, callback) {
 InlineResourcePlugin.prototype.apply = function (compiler) {
     var self = this;
     //set global debug flag
-    debug = this.options.debug;
+    debug = true;
     compiler.plugin('emit', function (compilation, callback) {
         self.compilation = compilation;
         if (self.options.list.length) {
