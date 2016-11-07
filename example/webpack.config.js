@@ -23,7 +23,7 @@ module.exports = {
             //it can also be a file path string or file path array.such as
             //list: ['./build/hello.html']
             //or use glob,such as
-            //list: ['./build/*.html']
+            list: ['./build/*.html'],
             //list: ['./build/hello.html'],
             debug: true
         })

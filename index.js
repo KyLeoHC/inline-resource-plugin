@@ -23,20 +23,10 @@ function InlineResourcePlugin(options) {
     this.startTime = Date.now();
 }
 
-InlineResourcePlugin.prototype.generateAssets = function (file, content) {
-    if (this.compilation) {
-        this.compilation.assets[file + '?' + new Date().getTime()] = {
-            source: function () {
-                return content;
-            },
-            size: function () {
-                return content.length;
-            },
-            emitted: true
-        };
-    }
-};
-
+/**
+ * look for files which has changed
+ * @returns {Array.<*>}
+ */
 InlineResourcePlugin.prototype.findChangedFiles = function () {
     var compilation = this.compilation;
     var changedFiles = Object.keys(compilation.fileTimestamps)
@@ -51,7 +41,8 @@ InlineResourcePlugin.prototype.dealWithFile = function (file) {
     var assets = this.compilation.assets,
         content = assets[file] ? assets[file].source() : this.cacheFile[file].source(),
         self = this;
-    log('+ ' + 'assets' + ': ' + file);
+    log('+ assets: ' + file);
+
     //if this is a new file
     //add it into cache
     if (!self.cacheFile[file]) {
@@ -63,31 +54,29 @@ InlineResourcePlugin.prototype.dealWithFile = function (file) {
             };
         })(content);
     }
-    //console.log('before:  ' + content);
+
+    //do inline task
     content = inline(content, Object.assign(self.options, {
         handlers: function (source) {
             self.dependency[source.filepath] = file;
         }
     }));
+
+    //push inline file into the compilation.fileDependencies array to add them to the watch
     Object.keys(self.dependency).forEach(function (filePath) {
         self.compilation.fileDependencies.push(filePath);
     });
-    console.log(self.compilation.fileDependencies);
-    self.generateAssets(file, content);
-    console.log(self.compilation.assets);
-    //console.log('after:   ' + content);
-};
 
-InlineResourcePlugin.prototype.inlineByListOpt = function () {
-    var options = this.options;
-    options.list.forEach(function (pattern) {
-        var files = glob.sync(pattern) || [];
-        log('+ pattern[' + pattern + '] : ' + files.join(' '));
-        files.forEach(function (file) {
-            var content = inline(file, options);
-            fs.writeFileSync(file, content);
-        });
-    });
+    //add it into compilation.assets
+    //generate file by webpack
+    self.compilation.assets[file] = {
+        source: function () {
+            return content;
+        },
+        size: function () {
+            return content.length;
+        }
+    };
 };
 
 InlineResourcePlugin.prototype.inlineByAssetsData = function () {
@@ -101,6 +90,23 @@ InlineResourcePlugin.prototype.inlineByAssetsData = function () {
     });
 };
 
+InlineResourcePlugin.prototype.inlineByListOpt = function () {
+    var options = this.options, files, content;
+    options.list.forEach(function (pattern) {
+        files = glob.sync(pattern) || [];
+        log('+ pattern[' + pattern + '] : ' + files.join(' '));
+        files.forEach(function (file) {
+            content = inline(file, options);
+            fs.writeFileSync(file, content);
+        });
+    });
+};
+
+/**
+ * execute task
+ * @param task
+ * @param callback
+ */
 InlineResourcePlugin.prototype.doInline = function (task, callback) {
     log('start inline resource:');
     task.apply(this);
@@ -115,10 +121,14 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
     if (this.options.list.length) {
         //if list option is passed
         //inline task will start during the done lifecycle
+        //And read file without webpack
         compiler.plugin('done', function () {
             self.doInline(self.inlineByListOpt);
         });
     } else {
+        //read file in the compilation assets
+        //it is used for working with the other plugins
+        //such as HtmlWebpackPlugin
         compiler.plugin('emit', function (compilation, callback) {
             self.compilation = compilation;
             self.doInline(self.inlineByAssetsData, callback);
