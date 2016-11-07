@@ -16,7 +16,7 @@ module.exports = {
             inject: 'body'
         }),
         new InlineResource({
-            compress: true,
+            compress: false,
             rootpath: './src',
             //if you have only one html file,this list option can also be a character string.such as
             //list: 'hello.html'
