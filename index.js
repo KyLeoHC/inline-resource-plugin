@@ -31,8 +31,8 @@ function InlineResourcePlugin(options) {
 InlineResourcePlugin.prototype.findChangedFiles = function () {
     var compilation = this.compilation;
     var changedFiles = Object.keys(compilation.fileTimestamps)
-        .filter(function (watchfile) {
-            return (this.prevTimestamps[watchfile] || this.startTime) < (compilation.fileTimestamps[watchfile] || Infinity);
+        .filter(function (watchFile) {
+            return (this.prevTimestamps[watchFile] || this.startTime) < (compilation.fileTimestamps[watchFile] || Infinity);
         }.bind(this));
     this.prevTimestamps = compilation.fileTimestamps;
     return changedFiles;
@@ -41,8 +41,13 @@ InlineResourcePlugin.prototype.findChangedFiles = function () {
 InlineResourcePlugin.prototype.dealWithFile = function (file) {
     var assets = this.compilation.assets,
         fileObj = assets[file] ? assets[file] : this.cacheFile[file],
-        content = fileObj.source(),
-        self = this;
+        content = '', self = this;
+    if (!fileObj) {
+        //ignore the non-existent path
+        return;
+    } else {
+        content = fileObj.source();
+    }
     log('+ assets: ' + file);
 
     //if this is a new file or rebuild by the other plugins(such as HtmlWebpackPlugin)
