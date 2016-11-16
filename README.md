@@ -28,6 +28,7 @@ $ npm install inline-resource-plugin --save-dev
 ```
 
 ```js
+//Be careful,this plugin doesn't support ES6 until now
 /* ./src/inline.js */
 function Person() {
 }
