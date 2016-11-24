@@ -5,10 +5,17 @@ var inline = require('inline-source').sync,
     glob = require('glob'),
     path = require('path'),
     fs = require('fs');
+var vm = require('vm');
+var _ = require('lodash');
+var NodeTemplatePlugin = require('webpack/lib/node/NodeTemplatePlugin');
+var NodeTargetPlugin = require('webpack/lib/node/NodeTargetPlugin');
+var LoaderTargetPlugin = require('webpack/lib/LoaderTargetPlugin');
+var LibraryTemplatePlugin = require('webpack/lib/LibraryTemplatePlugin');
+var SingleEntryPlugin = require('webpack/lib/SingleEntryPlugin');
 var debug = false;
 
 var log = function (info) {
-    debug && console.log(info.blue);
+    //debug && console.log(info.blue);
 };
 
 function InlineResourcePlugin(options) {
@@ -24,129 +31,46 @@ function InlineResourcePlugin(options) {
     this.startTime = Date.now();
 }
 
-/**
- * look for files which has changed
- * @returns {Array.<*>}
- */
-InlineResourcePlugin.prototype.findChangedFiles = function () {
-    var compilation = this.compilation;
-    var changedFiles = Object.keys(compilation.fileTimestamps)
-        .filter(function (watchFile) {
-            return (this.prevTimestamps[watchFile] || this.startTime) < (compilation.fileTimestamps[watchFile] || Infinity);
-        }.bind(this));
-    this.prevTimestamps = compilation.fileTimestamps;
-    return changedFiles;
-};
 
-InlineResourcePlugin.prototype.dealWithFile = function (file) {
-    var assets = this.compilation.assets,
-        fileObj = assets[file] ? assets[file] : this.cacheFile[file],
-        content = '', self = this;
-    if (!fileObj) {
-        //ignore the non-existent path
-        return;
-    } else {
-        content = fileObj.source();
-    }
-    log('+ assets: ' + file);
-
-    //if this is a new file or rebuild by the other plugins(such as HtmlWebpackPlugin)
-    //add it into cache
-    if (!fileObj.isCache) {
-        self.cacheFile[file] = (function (content) {
-            return {
-                source: function () {
-                    return content;
-                },
-                isCache: true
-            };
-        })(content);
-    }
-
-    //do inline task
-    content = inline(content, Object.assign(self.options, {
-        handlers: function (source) {
-            self.dependency[source.filepath] = file;
-        }
-    }));
-
-    //push inline file into the compilation.fileDependencies array to add them to the watch
-    Object.keys(self.dependency).forEach(function (filePath) {
-        self.compilation.fileDependencies.push(filePath);
-    });
-
-    //add it into compilation.assets
-    //generate file by webpack
-    self.compilation.assets[path.parse(file).base] = {
-        source: function () {
-            return content;
-        },
-        size: function () {
-            return content.length;
-        }
-    };
-};
-
-/**
- * read file from compilation.assets
- */
-InlineResourcePlugin.prototype.inlineByAssetsData = function () {
-    var assets = this.compilation.assets,
-        assetsArray = Object.keys(assets),
-        self = this;
-    assetsArray = assetsArray.concat(self.findChangedFiles());
-    assetsArray.forEach(function (file) {
-        file = self.dependency[file] ? self.dependency[file] : file;
-        self.include.test(file) && self.dealWithFile(file);
-    });
-};
-
-/**
- * read file from local file system
- */
-InlineResourcePlugin.prototype.inlineByListOpt = function () {
-    var options = this.options, self = this, files;
-    options.list.forEach(function (pattern) {
-        files = glob.sync(pattern) || [];
-        log('+ pattern[' + pattern + '] : ' + files.join(' '));
-        files.forEach(function (file) {
-            self.cacheFile[file] = (function (content) {
-                return {
-                    source: function () {
-                        return content;
-                    },
-                    isCache: true
-                };
-            })(fs.readFileSync(file, {encoding: 'utf-8'}));
-            self.dealWithFile(file);
-        });
-    });
-};
-
-/**
- * execute task
- * @param task
- * @param callback
- */
-InlineResourcePlugin.prototype.doInline = function (task, callback) {
-    log('start inline resource:');
-    task.apply(this);
-    log('finish inline resource:');
-    callback && callback();
-};
-
+var target = './src/hello.html';
 InlineResourcePlugin.prototype.apply = function (compiler) {
     var self = this;
     //set global debug flag
     debug = true;
-    compiler.plugin('emit', function (compilation, callback) {
-        self.compilation = compilation;
-        if (self.options.list.length) {
-            self.doInline(self.inlineByListOpt, callback);
-        } else {
-            self.doInline(self.inlineByAssetsData, callback);
-        }
+    compiler.plugin('make', function (compilation, callback) {
+        var outputOptions = {
+            filename: 'compile.html',
+            publicPath: compilation.outputOptions.publicPath
+        };
+        var childCompiler = compilation.createChildCompiler('inline-resource-plugin', outputOptions);
+        childCompiler.context = compiler.context;
+        childCompiler.apply(
+            new NodeTemplatePlugin(outputOptions),
+            new NodeTargetPlugin(),
+            new LibraryTemplatePlugin('INLINE_RESOURCE_PLUGIN_RESULT', 'var'),
+            new SingleEntryPlugin(this.context, 'raw-loader!' + target),
+            new LoaderTargetPlugin('node')
+        );
+        childCompiler.runAsChild(function (err, entries, childCompilation) {
+        });
+        compilation.plugin('seal', function () {
+            console.log(Object.keys(compilation.assets));
+            //console.log(compilation.assets['compile.html'].source());
+            evaluateCompilationResult(compilation.assets['compile.html'].source());
+            callback && callback();
+        });
+        callback();
     });
 };
+
+function evaluateCompilationResult(source) {
+    source = source.replace('var INLINE_RESOURCE_PLUGIN_RESULT =', '');
+    var template = target;
+    var vmContext = vm.createContext(_.extend({HTML_WEBPACK_PLUGIN: true, require: require}, global));
+    var vmScript = new vm.Script(source, {filename: template});
+    // Evaluate code and cast to string
+    var newSource = vmScript.runInContext(vmContext);
+    console.log(newSource);
+}
 
 module.exports = InlineResourcePlugin;
