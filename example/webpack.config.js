@@ -17,7 +17,9 @@ module.exports = {
         }),
         new InlineResource({
             compress: true,
-            rootpath: './src'
+            rootpath: './src',
+            template: './src/compile.html',
+            filename: 'compile.html'
         })
     ]
 };
