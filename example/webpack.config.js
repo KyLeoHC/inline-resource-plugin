@@ -23,7 +23,7 @@ module.exports = {
         new InlineResource({
             compress: true,
             rootpath: './src',
-            template: './src/compile.html',
+            template: './src/hello.html',
             filename: 'compile.html'
         })
     ]

@@ -50,7 +50,7 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	function Person() {
 	}
@@ -58,9 +58,21 @@
 	Person.prototype.sayHello = function () {
 	    var word = 'hello world!!!';
 	    console.log(word);
+	    __webpack_require__(1)();
 	};
 
 	new Person().sayHello();
+
+/***/ },
+/* 1 */
+/***/ function(module, exports) {
+
+	/**
+	 * Created by KyLeo on 2016/11/25.
+	 */
+	module.exports = function () {
+	    console.log('compile');
+	};
 
 /***/ }
 /******/ ]);</script>
