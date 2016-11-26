@@ -9,6 +9,11 @@ module.exports = {
         path: './build',
         filename: '[name].js'
     },
+    // module: {
+    //     loaders: [
+    //         {test: /\.css$/, loader: 'style!css'}
+    //     ]
+    // },
     plugins: [
         new HtmlWebpackPlugin({
             filename: 'hello.html',

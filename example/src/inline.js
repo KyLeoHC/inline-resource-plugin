@@ -2,7 +2,7 @@ function Person() {
 }
 
 Person.prototype.sayHello = function () {
-    var word = 'hello world!';
+    var word = 'hello world!!!';
     console.log(word);
 };
 
