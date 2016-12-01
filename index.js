@@ -31,12 +31,11 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
             var childHTMLCompiler = ChildCompiler.create(fullTemplate, compiler.context, outputOptions, compilation, true);
             childHTMLCompiler.runAsChild();
         }
-        self.findAndCompileInlineFile(self.options.template, compiler, compilation);
-        callback && callback();
+
+        self.findAndCompileInlineFile(self.options.template, compiler, compilation, callback);
     });
 
     compiler.plugin('emit', function (compilation, callback) {
-        console.log(Object.keys(compilation.assets));
         Object.keys(compilation.assets).forEach(function (template) {
             if (self.options.include.test(template)) {
                 var asset = compilation.assets[template];
@@ -75,7 +74,7 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
     });
 };
 
-InlineResourcePlugin.prototype.findAndCompileInlineFile = function (template, compiler, compilation) {
+InlineResourcePlugin.prototype.findAndCompileInlineFile = function (template, compiler, compilation, callback) {
     var self = this;
     inline(template, _.extend({
         handlers: function (source) {
@@ -85,12 +84,14 @@ InlineResourcePlugin.prototype.findAndCompileInlineFile = function (template, co
                 };
                 var childJSCompiler = ChildCompiler.create(source.filepath, compiler.context, outputOptions, compilation);
                 self._assetMap[source.filepath] = outputOptions.filename;
-                childJSCompiler.runAsChild();
+                compiler.plugin(config.COMPILE_COMPLETE_EVENT, childJSCompiler.runAsChild);
             }
         }
     }, self.options, {
         compress: false
     }));
+    //run callback until the all childCompiler is finished
+    compiler.applyPluginsParallel(config.COMPILE_COMPLETE_EVENT, callback);
 };
 
 InlineResourcePlugin.prototype.generateUniqueFileName = function (path) {
