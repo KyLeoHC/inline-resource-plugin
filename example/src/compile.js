@@ -2,5 +2,5 @@
  * Created by KyLeo on 2016/11/25.
  */
 module.exports = function () {
-    console.log('compile');
+    console.log('compile 123456!!-');
 };

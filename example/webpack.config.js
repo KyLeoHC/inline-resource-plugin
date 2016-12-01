@@ -15,13 +15,13 @@ module.exports = {
     //     ]
     // },
     plugins: [
-        new HtmlWebpackPlugin({
-            filename: 'hello.html',
-            template: './src/hello.html',
-            inject: 'body'
-        }),
+        // new HtmlWebpackPlugin({
+        //     filename: 'hello.html',
+        //     template: './src/hello.html',
+        //     inject: 'body'
+        // }),
         new InlineResource({
-            compress: true,
+            compress: false,
             rootpath: './src',
             template: './src/hello.html',
             filename: 'compile.html'
