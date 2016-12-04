@@ -13,12 +13,23 @@ function InlineResourcePlugin(options) {
     this._assetMap = {};
     this._nameMap = {};
     this._cacheTemplateFile = {};
+    this.prevTimestamps = {};
+    this.startTime = Date.now();
     this.options = _.extend({
         compress: false,
         compile: true,
         test: /(\.html$)|(\.ejs$)/
     }, options);
 }
+
+InlineResourcePlugin.prototype.findChangedFiles = function (compilation) {
+    var changedFiles = Object.keys(compilation.fileTimestamps)
+        .filter(function (watchFile) {
+            return (this.prevTimestamps[watchFile] || this.startTime) < (compilation.fileTimestamps[watchFile] || Infinity);
+        }.bind(this));
+    this.prevTimestamps = compilation.fileTimestamps;
+    return changedFiles;
+};
 
 InlineResourcePlugin.prototype.apply = function (compiler) {
     var self = this;
@@ -61,7 +72,8 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
                         },
                         size: function () {
                             return content.length;
-                        }
+                        },
+                        isCache: true
                     };
                 })(buildContent);
                 buildContent = inline(buildContent, _.extend({
