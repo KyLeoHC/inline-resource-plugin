@@ -76,7 +76,7 @@ Available `options` include:
 ```javascript
 //webpack.config.js
 var HtmlWebpackPlugin = require('html-webpack-plugin');
-var InlineResource = require('inline-resource-plugin');
+var InlineResourcePlugin = require('inline-resource-plugin');
 
 module.exports = {
     entry: {
@@ -92,7 +92,7 @@ module.exports = {
             template: './src/hello.html',
             inject: 'body'
         }),
-        new InlineResource({
+        new InlineResourcePlugin({
             compile: false,
             compress: true,
             rootpath: './src',

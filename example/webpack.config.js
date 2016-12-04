@@ -1,5 +1,5 @@
 var HtmlWebpackPlugin = require('html-webpack-plugin');
-var InlineResource = require('../index');
+var InlineResourcePlugin = require('../index');
 
 module.exports = {
     entry: {
@@ -16,7 +16,7 @@ module.exports = {
             template: './src/hello.html',
             inject: 'body'
         }),
-        new InlineResource({
+        new InlineResourcePlugin({
             compile: false,
             compress: false,
             rootpath: './src',
