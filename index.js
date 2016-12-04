@@ -20,6 +20,85 @@ function InlineResourcePlugin(options) {
     }, options);
 }
 
+/**
+ * detect the embed file has changed or not.
+ * @param compilation
+ */
+InlineResourcePlugin.prototype.detectChange = function (compilation) {
+    return true;
+};
+
+/**
+ * evaluate the template to get embed files which need to be compiled
+ * @param template
+ * @param compiler
+ * @param compilation
+ * @param callback
+ */
+InlineResourcePlugin.prototype.findAndCompileInlineFile = function (template, compiler, compilation, callback) {
+    var self = this;
+    inline(template, _.extend({
+        handlers: function (source) {
+            if (source.type == 'js') {
+                //compile JS file
+                var outputOptions = {
+                    filename: self.generateUniqueFileName(source.filepath)
+                };
+                var childJSCompiler = ChildCompiler.create(source.filepath, compiler.context, outputOptions, compilation);
+                self._assetMap[source.filepath] = outputOptions.filename;
+                compiler.plugin(config.COMPILE_COMPLETE_EVENT, childJSCompiler.runAsChild);
+            }
+        }
+    }, self.options, {
+        compress: false
+    }));
+    //run callback until the all childCompiler is finished
+    compiler.applyPluginsParallel(config.COMPILE_COMPLETE_EVENT, callback);
+};
+
+/**
+ * let every embed file has their own unique name
+ * @param path
+ * @returns {*}
+ */
+InlineResourcePlugin.prototype.generateUniqueFileName = function (path) {
+    if (!this._nameMap[path]) {
+        this._nameMap[path] = 'inline_temp_{{count}}.js'.replace('{{count}}', this.count++);
+    }
+    return this._nameMap[path];
+};
+
+/**
+ * find a loader to load file
+ * @param template
+ * @param compiler
+ * @returns {*}
+ */
+InlineResourcePlugin.prototype.initLoader = function (template, compiler) {
+    var moduleConfig = _.extend({preLoaders: [], loaders: [], postLoaders: []}, compiler.options.module);
+    var loaders = moduleConfig.preLoaders.concat(moduleConfig.loaders).concat(moduleConfig.postLoaders);
+    loaders.forEach(function (loader) {
+        if (loader.test.test(template)) {
+            //if there exist a load for evaluating template
+            //don't need another loader
+            this._templateLoader = '';
+        }
+    }.bind(this));
+    this._templateLoader = this._templateLoader === null ? 'raw-loader!' : this._templateLoader;
+    return this._templateLoader + template;
+};
+
+/**
+ * get template from compile result
+ * @param source
+ * @returns {*}
+ */
+InlineResourcePlugin.prototype.getTemplateCompileResult = function (source) {
+    var vmContext = vm.createContext(global);
+    var vmScript = new vm.Script(source, {filename: this.options.template});
+    return vmScript.runInContext(vmContext);
+};
+
 InlineResourcePlugin.prototype.apply = function (compiler) {
     var self = this;
     compiler.plugin('make', function (compilation, callback) {
@@ -90,54 +169,13 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
         });
         callback && callback();
     });
-};
 
-InlineResourcePlugin.prototype.findAndCompileInlineFile = function (template, compiler, compilation, callback) {
-    var self = this;
-    inline(template, _.extend({
-        handlers: function (source) {
-            if (source.type == 'js') {
-                //compile JS file
-                var outputOptions = {
-                    filename: self.generateUniqueFileName(source.filepath)
-                };
-                var childJSCompiler = ChildCompiler.create(source.filepath, compiler.context, outputOptions, compilation);
-                self._assetMap[source.filepath] = outputOptions.filename;
-                compiler.plugin(config.COMPILE_COMPLETE_EVENT, childJSCompiler.runAsChild);
-            }
+    compiler.plugin('after-emit', function (compilation, callback) {
+        if(self.detectChange()) {
+            console.log('change');
         }
-    }, self.options, {
-        compress: false
-    }));
-    //run callback until the all childCompiler is finished
-    compiler.applyPluginsParallel(config.COMPILE_COMPLETE_EVENT, callback);
-};
-
-InlineResourcePlugin.prototype.generateUniqueFileName = function (path) {
-    if (!this._nameMap[path]) {
-        this._nameMap[path] = 'inline_temp_{{count}}.js'.replace('{{count}}', this.count++);
-    }
-    return this._nameMap[path];
-};
-
-InlineResourcePlugin.prototype.initLoader = function (template, compiler) {
-    var moduleConfig = _.extend({preLoaders: [], loaders: [], postLoaders: []}, compiler.options.module);
-    var loaders = moduleConfig.preLoaders.concat(moduleConfig.loaders).concat(moduleConfig.postLoaders);
-    loaders.forEach(function (loader) {
-        if (loader.test.test(template)) {
-            //if there exist a load for evaluating template
-            //don't need another loader
-            this._templateLoader = '';
-        }
-    }.bind(this));
-    this._templateLoader = this._templateLoader === null ? 'raw-loader!' : this._templateLoader;
-    return this._templateLoader + template;
-};
-
-InlineResourcePlugin.prototype.getTemplateCompileResult = function (source) {
-    var vmContext = vm.createContext(global);
-    var vmScript = new vm.Script(source, {filename: this.options.template});
-    return vmScript.runInContext(vmContext);
+        callback();
+    });
 };
 
 module.exports = InlineResourcePlugin;
