@@ -28,6 +28,7 @@
     "webpack": "^1.13.3"
   },
   "dependencies": {
-    "inline-source": "^5.1.1"
+    "inline-source": "^5.1.1",
+    "lodash": "^4.17.2"
   }
 }
