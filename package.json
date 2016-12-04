@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "inline-source": "^5.1.1",
-    "lodash": "^4.17.2"
+    "lodash": "^4.17.2",
+    "raw-loader": "^0.5.1"
   }
 }
