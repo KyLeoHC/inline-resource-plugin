@@ -17,7 +17,7 @@ module.exports = {
             inject: 'body'
         }),
         new InlineResourcePlugin({
-            compile: false,
+            compile: true,
             compress: false,
             rootpath: './src',
             template: './src/hello.html',
