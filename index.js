@@ -34,7 +34,7 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
             childHTMLCompiler.runAsChild();
         }
 
-        if (self.compile) {
+        if (self.options.compile) {
             self.findAndCompileInlineFile(self.options.template, compiler, compilation, callback);
         } else {
             callback();
