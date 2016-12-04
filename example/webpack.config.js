@@ -7,24 +7,21 @@ module.exports = {
     },
     output: {
         path: './build',
+        publicPath: '/inline-resource-plugin/example/build/',
         filename: '[name].js'
     },
-    // module: {
-    //     loaders: [
-    //         {test: /\.css$/, loader: 'style!css'}
-    //     ]
-    // },
     plugins: [
-        // new HtmlWebpackPlugin({
-        //     filename: 'hello.html',
-        //     template: './src/hello.html',
-        //     inject: 'body'
-        // }),
+        new HtmlWebpackPlugin({
+            filename: 'hello.html',
+            template: './src/hello.html',
+            inject: 'body'
+        }),
         new InlineResource({
+            compile: false,
             compress: false,
             rootpath: './src',
             template: './src/hello.html',
-            filename: 'compile.html'
+            //filename: 'compile.html'
         })
     ]
 };
