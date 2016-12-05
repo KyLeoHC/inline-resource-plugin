@@ -1,3 +1,3 @@
 module.exports = function () {
-    console.log('compile JS file');
+    console.log('compile JS file.');
 };

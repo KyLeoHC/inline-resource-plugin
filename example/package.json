@@ -1,6 +1,6 @@
 {
   "name": "example",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "devDependencies": {
     "css-loader": "^0.26.0",
     "html-webpack-plugin": "^2.22.0",

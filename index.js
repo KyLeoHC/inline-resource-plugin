@@ -3,7 +3,6 @@
 var vm = require('vm');
 var _ = require('lodash');
 var path = require('path');
-var crypto = require('crypto');
 var inline = require('inline-source').sync;
 var config = require('./lib/config');
 var ChildCompiler = require('./lib/childCompiler');
@@ -14,6 +13,9 @@ function InlineResourcePlugin(options) {
     this._assetMap = {};
     this._nameMap = {};
     this._cacheTemplateFile = {};
+    this._embedFiles = [];
+    this.prevTimestamps = {};
+    this.startTime = Date.now();
     this.options = _.extend({
         compress: false,
         compile: true,
@@ -73,6 +75,9 @@ InlineResourcePlugin.prototype.getTemplateCompileResult = function (source) {
  */
 InlineResourcePlugin.prototype.findAndCompileInlineFile = function (template, compiler, compilation, callback) {
     var self = this;
+    //Because tapable module doesn't provide the method of deleting special event methods array
+    //so we can only delete it by this way...
+    delete compiler._plugins[config.COMPILE_COMPLETE_EVENT];
     inline(template, _.extend({
         handlers: function (source) {
             if (source.type == 'js') {
@@ -81,8 +86,21 @@ InlineResourcePlugin.prototype.findAndCompileInlineFile = function (template, co
                     filename: self.generateUniqueFileName(source.filepath)
                 };
                 var childJSCompiler = ChildCompiler.create(source.filepath, compiler.context, outputOptions, compilation);
+                childJSCompiler.plugin('after-compile', function (compilation, callback) {
+                    compilation.chunks.forEach(function (chunk) {
+                        chunk.modules.forEach(function (module) {
+                            module.fileDependencies.forEach(function (filepath) {
+                                //record all embed files
+                                self._embedFiles.push(filepath);
+                            });
+                        });
+                    });
+                    callback();
+                });
                 self._assetMap[source.filepath] = outputOptions.filename;
                 compiler.plugin(config.COMPILE_COMPLETE_EVENT, childJSCompiler.runAsChild);
+            } else {
+                self._embedFiles.push(source.filepath);
             }
         }
     }, self.options, {
@@ -93,14 +111,16 @@ InlineResourcePlugin.prototype.findAndCompileInlineFile = function (template, co
 };
 
 /**
- * compute and return the hash of a string
- * @param content
- * @returns {*}
+ * look for files which has changed
+ * @returns {Array.<*>}
  */
-InlineResourcePlugin.prototype.computeHash = function (content) {
-    var md5 = crypto.createHash('md5');
-    md5.update(content);
-    return md5.digest('hex');
+InlineResourcePlugin.prototype.findChangedFiles = function (compilation) {
+    var changedFiles = Object.keys(compilation.fileTimestamps)
+        .filter(function (file) {
+            return (this.prevTimestamps[file] || this.startTime) < (compilation.fileTimestamps[file] || Infinity);
+        }.bind(this));
+    this.prevTimestamps = compilation.fileTimestamps;
+    return changedFiles;
 };
 
 /**
@@ -109,13 +129,9 @@ InlineResourcePlugin.prototype.computeHash = function (content) {
  */
 InlineResourcePlugin.prototype.detectChange = function (compilation) {
     var self = this, flag = false;
-    Object.keys(compilation.assets).forEach(function (template) {
-        if (self.options.test.test(template)) {
-            //compare hash value
-            if (self._cacheTemplateFile[template].contentHash !== compilation.assets[template].contentHash) {
-                self._cacheTemplateFile[template].contentHash = compilation.assets[template].contentHash;
-                flag = true;
-            }
+    self.findChangedFiles(compilation).forEach(function (file) {
+        if (self._embedFiles.indexOf(file) > -1) {
+            flag = true;
         }
     });
     return flag;
@@ -124,7 +140,10 @@ InlineResourcePlugin.prototype.detectChange = function (compilation) {
 InlineResourcePlugin.prototype.apply = function (compiler) {
     var self = this;
     compiler.plugin('make', function (compilation, callback) {
+        //reset _embedFiles and _assetMap
+        self._embedFiles = [];
         self._assetMap = {};
+        self._embedFiles.push(path.resolve(self.options.template));
         if (self.options.filename) {
             //compile html
             var fullTemplate = self.initLoader(self.options.template, compiler);
@@ -164,7 +183,6 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
                             size: function () {
                                 return content.length;
                             },
-                            contentHash: '',
                             isCache: true
                         };
                     })(buildContent);
@@ -188,8 +206,7 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
                     },
                     size: function () {
                         return buildContent.length;
-                    },
-                    contentHash: self.computeHash(buildContent)
+                    }
                 };
             }
         });
