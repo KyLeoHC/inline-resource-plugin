@@ -213,7 +213,8 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
         if (self.detectChange(compilation)) {
             //if content has been changed
             //just let other plugins know that we have already recompiled file
-            compiler.applyPluginsAsyncWaterfall(config.AFTER_EMIT_EVENT);
+            compiler.applyPluginsAsyncSeries(config.AFTER_EMIT_EVENT, function () {
+            });
         }
         callback && callback();
     });
