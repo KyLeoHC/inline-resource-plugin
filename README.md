@@ -104,4 +104,15 @@ module.exports = {
 };
 ```
 
+## Events
+Available event include:
+- `inline-resource-plugin-html-after-emit`: This event represent that the compile and embed task has been completed.You may need it when you use this plugin with hot module replacement feature.
+
+example:
+```javascript
+compiler.plugin('inline-resource-plugin-html-after-emit', function () {
+  hotMiddleware.publish({action: 'reload'})
+});
+```
+
 note: You can find this demo in the example directory.
