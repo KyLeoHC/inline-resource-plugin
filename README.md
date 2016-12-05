@@ -103,6 +103,7 @@ module.exports = {
     ]
 };
 ```
+note: You can find this demo in the example directory.
 
 ## Events
 Available event include:
@@ -114,5 +115,3 @@ compiler.plugin('inline-resource-plugin-html-after-emit', function () {
   hotMiddleware.publish({action: 'reload'})
 });
 ```
-
-note: You can find this demo in the example directory.
