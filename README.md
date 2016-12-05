@@ -111,7 +111,8 @@ Available event include:
 
 example:
 ```javascript
-compiler.plugin('inline-resource-plugin-html-after-emit', function () {
-  hotMiddleware.publish({action: 'reload'})
+compiler.plugin('inline-resource-plugin-html-after-emit', function (data, callback) {
+  hotMiddleware.publish({action: 'reload'});
+  callback();
 });
 ```
