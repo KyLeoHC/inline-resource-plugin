@@ -66,7 +66,7 @@ InlineResourcePlugin.prototype.getTemplateCompileResult = function (source) {
 };
 
 /**
- * evaluate the template to get embed files which need to be compiled
+ * evaluate the template to get inline files which need to be compiled
  * @param template
  * @param compiler
  * @param compilation
@@ -95,7 +95,7 @@ InlineResourcePlugin.prototype.findAndCompileInlineFile = function (template, co
                         compilation.chunks.forEach(function (chunk) {
                             chunk.modules.forEach(function (module) {
                                 module.fileDependencies.forEach(function (filepath) {
-                                    //record all embed files
+                                    //record all inline files
                                     //used for find out the change files(watch mode)
                                     self._embedFiles.push(filepath);
                                 });
@@ -132,7 +132,7 @@ InlineResourcePlugin.prototype.findChangedFiles = function (compilation) {
 };
 
 /**
- * detect the content of embed file has changed or not.
+ * detect the content of inline file has changed or not.
  * @param compilation
  */
 InlineResourcePlugin.prototype.detectChange = function (compilation) {
@@ -205,12 +205,12 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
                                 globalReference[key]--;
                             }
                             if (asset && globalReference[key] === 0) {
-                                //don't generate the embed file
+                                //don't generate the inline file
                                 delete compilation.assets[key];
                                 delete globalReference[key];
                             }
                         }
-                        //watch the embed file
+                        //watch the inline file
                         compilation.fileDependencies.push(source.filepath);
                     }
                 }, self.options));
