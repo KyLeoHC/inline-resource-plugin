@@ -84,6 +84,7 @@ module.exports = {
     },
     output: {
         path: './build',
+        publicPath: '/inline-resource-plugin/example/build/',
         filename: '[name].js'
     },
     plugins: [
@@ -93,12 +94,23 @@ module.exports = {
             inject: 'body'
         }),
         new InlineResourcePlugin({
-            compile: false,
-            compress: true,
+            compile: true,
+            compress: false,
             rootpath: './src',
-            test: /(\.html$)|(\.ejs$)/
-            template: './src/hello.html',
+            template: './src/hello.html'
             //filename: 'hello.html'
+        }),
+        new HtmlWebpackPlugin({
+            filename: 'world.html',
+            template: './src/world.html',
+            inject: 'body'
+        }),
+        new InlineResourcePlugin({
+            compile: true,
+            compress: false,
+            rootpath: './src',
+            template: './src/world.html'
+            //filename: 'world.html'
         })
     ]
 };

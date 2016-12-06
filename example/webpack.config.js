@@ -20,8 +20,20 @@ module.exports = {
             compile: true,
             compress: false,
             rootpath: './src',
-            template: './src/hello.html',
-            //filename: 'compile.html'
+            template: './src/hello.html'
+            //filename: 'hello.html'
+        }),
+        new HtmlWebpackPlugin({
+            filename: 'world.html',
+            template: './src/world.html',
+            inject: 'body'
+        }),
+        new InlineResourcePlugin({
+            compile: true,
+            compress: false,
+            rootpath: './src',
+            template: './src/world.html'
+            //filename: 'world.html'
         })
     ]
 };

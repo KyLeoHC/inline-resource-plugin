@@ -6,6 +6,7 @@ var path = require('path');
 var inline = require('inline-source').sync;
 var config = require('./lib/config');
 var ChildCompiler = require('./lib/childCompiler');
+var globalReference = {};
 
 function InlineResourcePlugin(options) {
     this.count = 0;
@@ -85,20 +86,29 @@ InlineResourcePlugin.prototype.findAndCompileInlineFile = function (template, co
                 var outputOptions = {
                     filename: self.generateUniqueFileName(source.filepath)
                 };
-                var childJSCompiler = ChildCompiler.create(source.filepath, compiler.context, outputOptions, compilation);
-                childJSCompiler.plugin('after-compile', function (compilation, callback) {
-                    compilation.chunks.forEach(function (chunk) {
-                        chunk.modules.forEach(function (module) {
-                            module.fileDependencies.forEach(function (filepath) {
-                                //record all embed files
-                                self._embedFiles.push(filepath);
+                if (globalReference[outputOptions.filename]) {
+                    //if the target file has been compile
+                    //just count and ignore it
+                    //don't compile again
+                    globalReference[outputOptions.filename]++;
+                } else {
+                    var childJSCompiler = ChildCompiler.create(source.filepath, compiler.context, outputOptions, compilation);
+                    childJSCompiler.plugin('after-compile', function (compilation, callback) {
+                        compilation.chunks.forEach(function (chunk) {
+                            chunk.modules.forEach(function (module) {
+                                module.fileDependencies.forEach(function (filepath) {
+                                    //record all embed files
+                                    //used for find out the change files(watch mode)
+                                    self._embedFiles.push(filepath);
+                                });
                             });
                         });
+                        callback();
                     });
-                    callback();
-                });
+                    globalReference[outputOptions.filename] = 1;//init reference count
+                    compiler.plugin(config.COMPILE_COMPLETE_EVENT, childJSCompiler.runAsChild);
+                }
                 self._assetMap[source.filepath] = outputOptions.filename;
-                compiler.plugin(config.COMPILE_COMPLETE_EVENT, childJSCompiler.runAsChild);
             } else {
                 self._embedFiles.push(source.filepath);
             }
@@ -143,7 +153,6 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
         //reset _embedFiles and _assetMap
         self._embedFiles = [];
         self._assetMap = {};
-        self._embedFiles.push(path.resolve(self.options.template));
         if (self.options.filename) {
             //compile html
             var fullTemplate = self.initLoader(self.options.template, compiler);
@@ -152,6 +161,7 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
             };
             var childHTMLCompiler = ChildCompiler.create(fullTemplate, compiler.context, outputOptions, compilation, true);
             childHTMLCompiler.runAsChild();
+            self._embedFiles.push(path.resolve(self.options.template));
         }
 
         if (self.options.compile) {
@@ -193,8 +203,14 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
                             var key = self._assetMap[source.filepath],
                                 asset = compilation.assets[key];
                             source.fileContent = asset ? asset.source() : source.fileContent;
-                            //don't generate the embed file
-                            asset && delete compilation.assets[key];
+                            if (globalReference[key]) {
+                                globalReference[key]--;
+                            }
+                            if (asset && globalReference[key] === 0) {
+                                //don't generate the embed file
+                                delete compilation.assets[key];
+                                delete globalReference[key];
+                            }
                         }
                         //watch the embed file
                         compilation.fileDependencies.push(source.filepath);
