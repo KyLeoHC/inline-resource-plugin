@@ -6,13 +6,11 @@ var path = require('path');
 var inline = require('inline-source').sync;
 var config = require('./lib/config');
 var ChildCompiler = require('./lib/childCompiler');
-var globalReference = {};
+var globalReference = {}, globalNameMap = {}, count = 0;
 
 function InlineResourcePlugin(options) {
-    this.count = 0;
     this._templateLoader = null;
     this._assetMap = {};
-    this._nameMap = {};
     this._cacheTemplateFile = {};
     this._embedFiles = [];
     this.prevTimestamps = {};
@@ -30,10 +28,10 @@ function InlineResourcePlugin(options) {
  * @returns {*}
  */
 InlineResourcePlugin.prototype.generateUniqueFileName = function (path) {
-    if (!this._nameMap[path]) {
-        this._nameMap[path] = 'inline_temp_{{count}}.js'.replace('{{count}}', this.count++);
+    if (!globalNameMap[path]) {
+        globalNameMap[path] = 'inline_temp_{{count}}.js'.replace('{{count}}', count++);
     }
-    return this._nameMap[path];
+    return globalNameMap[path];
 };
 
 /**
