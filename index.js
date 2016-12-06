@@ -197,7 +197,7 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
                 }
                 buildContent = inline(buildContent, _.extend({
                     handlers: function (source) {
-                        if (source.type == 'js') {
+                        if (source.type == 'js' && self.options.compile) {
                             var key = self._assetMap[source.filepath],
                                 asset = compilation.assets[key];
                             source.fileContent = asset ? asset.source() : source.fileContent;
