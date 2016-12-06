@@ -69,7 +69,7 @@ Available `options` include:
 - `compile`: If the file that you want to embed need to be compiled(such as ES6 or require), you can pass 'true'(default `false`);
 - `compress`: enable/disable compression (default `true`);
 - `rootpath`: path used for resolving inlineable paths (default `process.cwd()`);
-- `test`: the file which you want to execute inline task (non-required, default `/(\.html$)|(\.ejs$)/`);
+- `test`: the file which you want to execute embed task (non-required, default `/(\.html$)|(\.ejs$)/`);
 - `template`: the path of your template file(required);
 - `filename`: If you decide to use the other plugins such as HtmlWebpackPlugin to generate template file,you can ignore this option.Or you can pass the path and we will generate template file by ourselves(non-required).
 
@@ -97,7 +97,8 @@ module.exports = {
             compile: true,
             compress: false,
             rootpath: './src',
-            template: './src/hello.html'
+            template: './src/hello.html',
+            test: /^hello\.html$/
             //filename: 'hello.html'
         }),
         new HtmlWebpackPlugin({
@@ -109,7 +110,8 @@ module.exports = {
             compile: true,
             compress: false,
             rootpath: './src',
-            template: './src/world.html'
+            template: './src/world.html',
+            test: /^world\.html$/
             //filename: 'world.html'
         })
     ]

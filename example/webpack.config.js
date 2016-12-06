@@ -20,7 +20,8 @@ module.exports = {
             compile: true,
             compress: false,
             rootpath: './src',
-            template: './src/hello.html'
+            template: './src/hello.html',
+            test: /^hello\.html$/
             //filename: 'hello.html'
         }),
         new HtmlWebpackPlugin({
@@ -32,7 +33,8 @@ module.exports = {
             compile: true,
             compress: false,
             rootpath: './src',
-            template: './src/world.html'
+            template: './src/world.html',
+            test: /^world\.html$/
             //filename: 'world.html'
         })
     ]
