@@ -195,25 +195,35 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
                         };
                     })(buildContent);
                 }
-                buildContent = inline(buildContent, _.extend({
-                    handlers: function (source) {
-                        if (source.type == 'js' && self.options.compile) {
-                            var key = self._assetMap[source.filepath],
-                                asset = compilation.assets[key];
-                            source.fileContent = asset ? asset.source() : source.fileContent;
-                            if (globalReference[key]) {
-                                globalReference[key]--;
+                try {
+                    buildContent = inline(buildContent, _.extend({
+                        handlers: function (source) {
+                            if (source.type == 'js' && self.options.compile) {
+                                var key = self._assetMap[source.filepath],
+                                    asset = compilation.assets[key];
+                                source.fileContent = asset ? asset.source() : source.fileContent;
+                                if (globalReference[key]) {
+                                    globalReference[key]--;
+                                }
+                                if (asset && globalReference[key] === 0) {
+                                    //don't generate the inline file
+                                    delete compilation.assets[key];
+                                    delete globalReference[key];
+                                }
                             }
-                            if (asset && globalReference[key] === 0) {
-                                //don't generate the inline file
-                                delete compilation.assets[key];
-                                delete globalReference[key];
-                            }
+                            //watch the inline file
+                            compilation.fileDependencies.push(source.filepath);
                         }
-                        //watch the inline file
-                        compilation.fileDependencies.push(source.filepath);
-                    }
-                }, self.options));
+                    }, self.options));
+                } catch (ex) {
+                    //Once we catch the JS parse error
+                    //just reset the 'globalReference' and delete the output file of us
+                    compilation.errors.push(ex.toString());
+                    Object.keys(globalReference).forEach(function (key) {
+                        delete compilation.assets[key];
+                    });
+                    globalReference = {};
+                }
                 compilation.assets[template] = {
                     source: function () {
                         return buildContent;
