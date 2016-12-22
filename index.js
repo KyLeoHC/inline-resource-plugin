@@ -222,7 +222,6 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
                     Object.keys(globalReference).forEach(function (key) {
                         delete compilation.assets[key];
                     });
-                    globalReference = {};
                 }
                 compilation.assets[template] = {
                     source: function () {
@@ -234,6 +233,12 @@ InlineResourcePlugin.prototype.apply = function (compiler) {
                 };
             }
         });
+
+        compiler.plugin('done', function () {
+            //force a reset of the 'globalReference' value
+            globalReference = {};
+        });
+
         if (self.detectChange(compilation)) {
             //if content has been changed
             //just let other plugins know that we have already recompiled file
