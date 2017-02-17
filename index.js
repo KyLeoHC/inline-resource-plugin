@@ -41,7 +41,8 @@ InlineResourcePlugin.prototype.generateUniqueFileName = function (path) {
  * @returns {*}
  */
 InlineResourcePlugin.prototype.initLoader = function (template, compiler) {
-    var moduleConfig = _.extend({preLoaders: [], loaders: [], postLoaders: []}, compiler.options.module);
+    //'rules' option is support for webpack2
+    var moduleConfig = _.extend({preLoaders: [], loaders: [], postLoaders: [], rules: []}, compiler.options.module);
     var loaders = moduleConfig.preLoaders.concat(moduleConfig.loaders).concat(moduleConfig.postLoaders);
     loaders.forEach(function (loader) {
         if (loader.test.test(template)) {

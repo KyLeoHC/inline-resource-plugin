@@ -18,7 +18,7 @@ module.exports = {
         }),
         new InlineResourcePlugin({
             compile: true,
-            compress: false,
+            compress: true,
             rootpath: './src',
             template: './src/hello.html',
             test: /^hello\.html$/
@@ -31,7 +31,7 @@ module.exports = {
         }),
         new InlineResourcePlugin({
             compile: true,
-            compress: false,
+            compress: true,
             rootpath: './src',
             template: './src/world.html',
             test: /^world\.html$/
