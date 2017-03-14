@@ -1,5 +1,3 @@
-'use strict';
-
 import vm from 'vm';
 import path from 'path';
 import _ from 'lodash';
