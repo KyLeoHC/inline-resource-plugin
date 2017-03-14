@@ -1,5 +1,5 @@
 var HtmlWebpackPlugin = require('html-webpack-plugin');
-var InlineResourcePlugin = require('../index');
+var InlineResourcePlugin = require('../dist/inline-resource-plugin.common');
 
 module.exports = {
     entry: {

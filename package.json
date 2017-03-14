@@ -2,7 +2,7 @@
   "name": "inline-resource-plugin",
   "version": "0.4.14",
   "description": "A webpack plugin to embed css/js resource in the html with inline-source module.",
-  "main": "index.js",
+  "main": "dist/inline-resource-plugin.common.js",
   "scripts": {
     "dist": "rollup -c"
   },

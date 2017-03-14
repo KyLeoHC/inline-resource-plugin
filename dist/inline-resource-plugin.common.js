@@ -5,7 +5,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var vm = _interopDefault(require('vm'));
 var path = _interopDefault(require('path'));
 var _ = _interopDefault(require('lodash'));
-var inline = _interopDefault(require('inline-source'));
+var inlineSource = _interopDefault(require('inline-source'));
 var NodeTemplatePlugin = _interopDefault(require('webpack/lib/node/NodeTemplatePlugin'));
 var NodeTargetPlugin = _interopDefault(require('webpack/lib/node/NodeTargetPlugin'));
 var LoaderTargetPlugin = _interopDefault(require('webpack/lib/LoaderTargetPlugin'));
@@ -140,6 +140,8 @@ var InlineResourcePlugin = function () {
     }, {
         key: 'initLoader',
         value: function initLoader(template, compiler) {
+            var _this = this;
+
             //'rules' option is support for webpack2
             var moduleConfig = _.extend({ preLoaders: [], loaders: [], postLoaders: [], rules: [] }, compiler.options.module);
             var loaders = moduleConfig.preLoaders.concat(moduleConfig.loaders).concat(moduleConfig.postLoaders);
@@ -147,9 +149,9 @@ var InlineResourcePlugin = function () {
                 if (loader.test.test(template)) {
                     //if there exist a load for evaluating template
                     //don't need another loader
-                    this._templateLoader = '';
+                    _this._templateLoader = '';
                 }
-            }.bind(this));
+            });
             this._templateLoader = this._templateLoader === null ? 'raw-loader!' : this._templateLoader;
             return this._templateLoader + template;
         }
@@ -163,9 +165,16 @@ var InlineResourcePlugin = function () {
     }, {
         key: 'getTemplateCompileResult',
         value: function getTemplateCompileResult(source) {
-            var vmContext = vm.createContext(global);
-            var vmScript = new vm.Script(source, { filename: this.options.template });
-            return vmScript.runInContext(vmContext);
+            var newSource = '';
+            try {
+                var vmContext = vm.createContext(global);
+                var vmScript = new vm.Script(source, { filename: this.options.template });
+                newSource = vmScript.runInContext(vmContext);
+            } catch (ex) {
+                console.error(ex);
+                newSource = source;
+            }
+            return newSource;
         }
 
         /**
@@ -179,16 +188,17 @@ var InlineResourcePlugin = function () {
     }, {
         key: 'findAndCompileInlineFile',
         value: function findAndCompileInlineFile(template, compiler, compilation, callback) {
-            var self = this;
+            var _this2 = this;
+
             //Because tapable module doesn't provide the method of deleting special event methods array
             //so we can only delete it by this way...
             delete compiler._plugins[config.COMPILE_COMPLETE_EVENT];
-            inline(template, _.extend({
+            inlineSource.sync(template, _.extend({
                 handlers: function handlers(source) {
                     if (source.type == 'js') {
                         //compile JS file
                         var outputOptions = {
-                            filename: self.generateUniqueFileName(source.filepath)
+                            filename: _this2.generateUniqueFileName(source.filepath)
                         };
                         if (globalReference[outputOptions.filename]) {
                             //if the target file has been compile
@@ -203,7 +213,7 @@ var InlineResourcePlugin = function () {
                                         module.fileDependencies.forEach(function (filepath) {
                                             //record all inline files
                                             //used for find out the change files(watch mode)
-                                            self._embedFiles.push(filepath);
+                                            _this2._embedFiles.push(filepath);
                                         });
                                     });
                                 });
@@ -212,12 +222,12 @@ var InlineResourcePlugin = function () {
                             globalReference[outputOptions.filename] = 1; //init reference count
                             compiler.plugin(config.COMPILE_COMPLETE_EVENT, childJSCompiler.runAsChild);
                         }
-                        self._assetMap[source.filepath] = outputOptions.filename;
+                        _this2._assetMap[source.filepath] = outputOptions.filename;
                     } else {
-                        self._embedFiles.push(source.filepath);
+                        _this2._embedFiles.push(source.filepath);
                     }
                 }
-            }, self.options, {
+            }, this.options, {
                 compress: false
             }));
             //run callback until the all childCompiler is finished
@@ -232,9 +242,11 @@ var InlineResourcePlugin = function () {
     }, {
         key: 'findChangedFiles',
         value: function findChangedFiles(compilation) {
+            var _this3 = this;
+
             var changedFiles = Object.keys(compilation.fileTimestamps).filter(function (file) {
-                return (this.prevTimestamps[file] || this.startTime) < (compilation.fileTimestamps[file] || Infinity);
-            }.bind(this));
+                return (_this3.prevTimestamps[file] || _this3.startTime) < (compilation.fileTimestamps[file] || Infinity);
+            });
             this.prevTimestamps = compilation.fileTimestamps;
             return changedFiles;
         }
@@ -247,56 +259,54 @@ var InlineResourcePlugin = function () {
     }, {
         key: 'detectChange',
         value: function detectChange(compilation) {
-            var self = this,
-                flag = false;
-            self.findChangedFiles(compilation).forEach(function (file) {
-                if (self._embedFiles.indexOf(file) > -1) {
-                    flag = true;
-                }
+            var _this4 = this;
+
+            return this.findChangedFiles(compilation).some(function (file) {
+                return _this4._embedFiles.indexOf(file) > -1;
             });
-            return flag;
         }
     }, {
         key: 'apply',
         value: function apply(compiler) {
-            var self = this;
+            var _this5 = this;
+
             compiler.plugin('make', function (compilation, callback) {
                 //reset _embedFiles and _assetMap
-                self._embedFiles = [];
-                self._assetMap = {};
-                if (self.options.filename) {
+                _this5._embedFiles = [];
+                _this5._assetMap = {};
+                if (_this5.options.filename) {
                     //compile html
-                    var fullTemplate = self.initLoader(self.options.template, compiler);
+                    var fullTemplate = _this5.initLoader(_this5.options.template, compiler);
                     var outputOptions = {
-                        filename: self.options.filename
+                        filename: _this5.options.filename
                     };
                     var childHTMLCompiler = ChildCompiler$1.create(fullTemplate, compiler.context, outputOptions, compilation, true);
                     childHTMLCompiler.runAsChild();
-                    self._embedFiles.push(path.resolve(self.options.template));
+                    _this5._embedFiles.push(path.resolve(_this5.options.template));
                 }
 
-                if (self.options.compile) {
-                    self.findAndCompileInlineFile(self.options.template, compiler, compilation, callback);
+                if (_this5.options.compile) {
+                    _this5.findAndCompileInlineFile(_this5.options.template, compiler, compilation, callback);
                 } else {
                     callback();
                 }
             });
 
             compiler.plugin('emit', function (compilation, callback) {
-                compilation.assets = _.extend({}, self._cacheTemplateFile, compilation.assets);
+                compilation.assets = _.extend({}, _this5._cacheTemplateFile, compilation.assets);
                 Object.keys(compilation.assets).forEach(function (template) {
-                    if (self.options.test.test(template)) {
+                    if (_this5.options.test.test(template)) {
                         var asset = compilation.assets[template];
                         var buildContent = asset.source();
-                        if (self.options.filename) {
+                        if (_this5.options.filename) {
                             //if the template is generated by other plugins
                             //don't evaluate the compile result
-                            buildContent = self.getTemplateCompileResult(buildContent);
+                            buildContent = _this5.getTemplateCompileResult(buildContent);
                             //only watch template file which are generated by us
-                            compilation.fileDependencies.push(path.resolve(self.options.template));
+                            compilation.fileDependencies.push(path.resolve(_this5.options.template));
                         }
                         if (!asset.isCache) {
-                            self._cacheTemplateFile[template] = function (content) {
+                            _this5._cacheTemplateFile[template] = function (content) {
                                 return {
                                     source: function source() {
                                         return content;
@@ -309,10 +319,10 @@ var InlineResourcePlugin = function () {
                             }(buildContent);
                         }
                         try {
-                            buildContent = inline(buildContent, _.extend({
+                            buildContent = inlineSource.sync(buildContent, _.extend({
                                 handlers: function handlers(source) {
-                                    if (source.type == 'js' && self.options.compile) {
-                                        var key = self._assetMap[source.filepath],
+                                    if (source.type == 'js' && _this5.options.compile) {
+                                        var key = _this5._assetMap[source.filepath],
                                             _asset = compilation.assets[key];
                                         source.fileContent = _asset ? _asset.source() : source.fileContent;
                                         if (globalReference[key]) {
@@ -327,7 +337,7 @@ var InlineResourcePlugin = function () {
                                     //watch the inline file
                                     compilation.fileDependencies.push(source.filepath);
                                 }
-                            }, self.options));
+                            }, _this5.options));
                         } catch (ex) {
                             //Once we catch the JS parse error
                             //just reset the 'globalReference' and delete the output file of us
@@ -352,7 +362,7 @@ var InlineResourcePlugin = function () {
                     globalReference = {};
                 });
 
-                if (self.detectChange(compilation)) {
+                if (_this5.detectChange(compilation)) {
                     //if content has been changed
                     //just let other plugins know that we have already recompiled file
                     compiler.applyPluginsAsyncWaterfall(config.AFTER_EMIT_EVENT, {}, function () {});

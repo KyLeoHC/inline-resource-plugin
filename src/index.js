@@ -3,11 +3,11 @@
 import vm from 'vm';
 import path from 'path';
 import _ from 'lodash';
-import inline from 'inline-source';
+import inlineSource from 'inline-source';
 import config from './lib/config';
 import ChildCompiler from './lib/childCompiler';
-let globalReference = {}, globalNameMap = {}, count = 0;
 
+let globalReference = {}, globalNameMap = {}, count = 0;
 class InlineResourcePlugin {
     constructor(options) {
         this._templateLoader = null;
@@ -45,13 +45,14 @@ class InlineResourcePlugin {
         //'rules' option is support for webpack2
         let moduleConfig = _.extend({preLoaders: [], loaders: [], postLoaders: [], rules: []}, compiler.options.module);
         let loaders = moduleConfig.preLoaders.concat(moduleConfig.loaders).concat(moduleConfig.postLoaders);
-        loaders.forEach(function (loader) {
-            if (loader.test.test(template)) {
-                //if there exist a load for evaluating template
-                //don't need another loader
-                this._templateLoader = '';
+        loaders.forEach((loader) => {
+                if (loader.test.test(template)) {
+                    //if there exist a load for evaluating template
+                    //don't need another loader
+                    this._templateLoader = '';
+                }
             }
-        }.bind(this));
+        );
         this._templateLoader = this._templateLoader === null ? 'raw-loader!' : this._templateLoader;
         return this._templateLoader + template;
     }
@@ -62,9 +63,16 @@ class InlineResourcePlugin {
      * @returns {*}
      */
     getTemplateCompileResult(source) {
-        let vmContext = vm.createContext(global);
-        let vmScript = new vm.Script(source, {filename: this.options.template});
-        return vmScript.runInContext(vmContext);
+        let newSource = '';
+        try {
+            let vmContext = vm.createContext(global);
+            let vmScript = new vm.Script(source, {filename: this.options.template});
+            newSource = vmScript.runInContext(vmContext);
+        } catch (ex) {
+            console.error(ex);
+            newSource = source;
+        }
+        return newSource;
     }
 
     /**
@@ -78,8 +86,8 @@ class InlineResourcePlugin {
         //Because tapable module doesn't provide the method of deleting special event methods array
         //so we can only delete it by this way...
         delete compiler._plugins[config.COMPILE_COMPLETE_EVENT];
-        inline(template, _.extend({
-            handlers: function (source) {
+        inlineSource.sync(template, _.extend({
+            handlers: (source) => {
                 if (source.type == 'js') {
                     //compile JS file
                     let outputOptions = {
@@ -92,10 +100,10 @@ class InlineResourcePlugin {
                         globalReference[outputOptions.filename]++;
                     } else {
                         let childJSCompiler = ChildCompiler.create(source.filepath, compiler.context, outputOptions, compilation);
-                        childJSCompiler.plugin('after-compile', function (compilation, callback) {
-                            compilation.chunks.forEach(function (chunk) {
-                                chunk.modules.forEach(function (module) {
-                                    module.fileDependencies.forEach(function (filepath) {
+                        childJSCompiler.plugin('after-compile', (compilation, callback) => {
+                            compilation.chunks.forEach((chunk) => {
+                                chunk.modules.forEach((module) => {
+                                    module.fileDependencies.forEach((filepath) => {
                                         //record all inline files
                                         //used for find out the change files(watch mode)
                                         this._embedFiles.push(filepath);
@@ -125,9 +133,9 @@ class InlineResourcePlugin {
      */
     findChangedFiles(compilation) {
         let changedFiles = Object.keys(compilation.fileTimestamps)
-            .filter(function (file) {
+            .filter((file) => {
                 return (this.prevTimestamps[file] || this.startTime) < (compilation.fileTimestamps[file] || Infinity);
-            }.bind(this));
+            });
         this.prevTimestamps = compilation.fileTimestamps;
         return changedFiles;
     }
@@ -137,13 +145,10 @@ class InlineResourcePlugin {
      * @param compilation
      */
     detectChange(compilation) {
-        let flag = false;
-        this.findChangedFiles(compilation).forEach(function (file) {
-            if (this._embedFiles.indexOf(file) > -1) {
-                flag = true;
-            }
-        });
-        return flag;
+        return this.findChangedFiles(compilation)
+            .some((file) => {
+                return this._embedFiles.indexOf(file) > -1;
+            });
     }
 
     apply(compiler) {
@@ -171,7 +176,7 @@ class InlineResourcePlugin {
 
         compiler.plugin('emit', (compilation, callback) => {
             compilation.assets = _.extend({}, this._cacheTemplateFile, compilation.assets);
-            Object.keys(compilation.assets).forEach(function (template) {
+            Object.keys(compilation.assets).forEach((template) => {
                 if (this.options.test.test(template)) {
                     let asset = compilation.assets[template];
                     let buildContent = asset.source();
@@ -183,7 +188,7 @@ class InlineResourcePlugin {
                         compilation.fileDependencies.push(path.resolve(this.options.template));
                     }
                     if (!asset.isCache) {
-                        this._cacheTemplateFile[template] = (function (content) {
+                        this._cacheTemplateFile[template] = ((content) => {
                             return {
                                 source: function () {
                                     return content;
@@ -196,7 +201,7 @@ class InlineResourcePlugin {
                         })(buildContent);
                     }
                     try {
-                        buildContent = inline(buildContent, _.extend({
+                        buildContent = inlineSource.sync(buildContent, _.extend({
                             handlers: (source) => {
                                 if (source.type == 'js' && this.options.compile) {
                                     let key = this._assetMap[source.filepath],
