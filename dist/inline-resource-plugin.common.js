@@ -9,12 +9,14 @@ var inlineSource = _interopDefault(require('inline-source'));
 var NodeTemplatePlugin = _interopDefault(require('webpack/lib/node/NodeTemplatePlugin'));
 var NodeTargetPlugin = _interopDefault(require('webpack/lib/node/NodeTargetPlugin'));
 var LoaderTargetPlugin = _interopDefault(require('webpack/lib/LoaderTargetPlugin'));
+var LibraryTemplatePlugin = _interopDefault(require('webpack/lib/LibraryTemplatePlugin'));
 var SingleEntryPlugin = _interopDefault(require('webpack/lib/SingleEntryPlugin'));
 
 var config = {
     PLUGIN_NAME: 'inline-resource-plugin',
     COMPILE_COMPLETE_EVENT: 'embed-content-compile-complete',
-    AFTER_EMIT_EVENT: 'inline-resource-plugin-html-after-emit'
+    AFTER_EMIT_EVENT: 'inline-resource-plugin-html-after-emit',
+    PLUGIN_TEMPLATE_RESULT: 'INLINE-RESOURCE-PLUGIN-RESULT'
 };
 
 var classCallCheck = function (instance, Constructor) {
@@ -56,7 +58,7 @@ var ChildCompiler = function () {
             childCompiler.apply(new NodeTargetPlugin(), new SingleEntryPlugin(context, template), new LoaderTargetPlugin('node'));
 
             if (isTemplate) {
-                childCompiler.apply(new NodeTemplatePlugin(outputOptions));
+                childCompiler.apply(new NodeTemplatePlugin(outputOptions), new LibraryTemplatePlugin(config.PLUGIN_TEMPLATE_RESULT, 'var'));
             }
 
             childCompiler.plugin('compilation', function (compilation) {
@@ -166,6 +168,7 @@ var InlineResourcePlugin = function () {
         key: 'getTemplateCompileResult',
         value: function getTemplateCompileResult(source) {
             var newSource = '';
+            source = source.replace('var ' + config.PLUGIN_TEMPLATE_RESULT + ' =', '');
             try {
                 var vmContext = vm.createContext(global);
                 var vmScript = new vm.Script(source, { filename: this.options.template });

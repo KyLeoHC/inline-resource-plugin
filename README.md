@@ -89,7 +89,7 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            filename: 'hello.html',
+            filename: 'hello_result.html',
             template: './src/hello.html',
             inject: 'body'
         }),
@@ -98,11 +98,11 @@ module.exports = {
             compress: false,
             rootpath: './src',
             template: './src/hello.html',
-            test: /^hello\.html$/
+            test: /^hello_result\.html$/
             //filename: 'hello.html'
         }),
         new HtmlWebpackPlugin({
-            filename: 'world.html',
+            filename: 'world_result.html',
             template: './src/world.html',
             inject: 'body'
         }),
@@ -111,7 +111,7 @@ module.exports = {
             compress: false,
             rootpath: './src',
             template: './src/world.html',
-            test: /^world\.html$/
+            test: /^world_result\.html$/
             //filename: 'world.html'
         })
     ]

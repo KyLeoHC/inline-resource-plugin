@@ -12,6 +12,7 @@ export default {
         'webpack/lib/node/NodeTemplatePlugin',
         'webpack/lib/node/NodeTargetPlugin',
         'webpack/lib/LoaderTargetPlugin',
-        'webpack/lib/SingleEntryPlugin'
+        'webpack/lib/SingleEntryPlugin',
+        'webpack/lib/LibraryTemplatePlugin'
     ]
 };

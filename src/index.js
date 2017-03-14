@@ -64,6 +64,7 @@ class InlineResourcePlugin {
      */
     getTemplateCompileResult(source) {
         let newSource = '';
+        source = source.replace('var ' + config.PLUGIN_TEMPLATE_RESULT + ' =', '');
         try {
             let vmContext = vm.createContext(global);
             let vmScript = new vm.Script(source, {filename: this.options.template});

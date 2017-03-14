@@ -3,6 +3,7 @@ import config from './config';
 import NodeTemplatePlugin from 'webpack/lib/node/NodeTemplatePlugin';
 import NodeTargetPlugin from 'webpack/lib/node/NodeTargetPlugin';
 import LoaderTargetPlugin from 'webpack/lib/LoaderTargetPlugin';
+import LibraryTemplatePlugin from 'webpack/lib/LibraryTemplatePlugin';
 import SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
 
 class ChildCompiler {
@@ -22,7 +23,8 @@ class ChildCompiler {
 
         if (isTemplate) {
             childCompiler.apply(
-                new NodeTemplatePlugin(outputOptions)
+                new NodeTemplatePlugin(outputOptions),
+                new LibraryTemplatePlugin(config.PLUGIN_TEMPLATE_RESULT, 'var')
             );
         }
 
