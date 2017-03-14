@@ -99,7 +99,7 @@ module.exports = {
             rootpath: './src',
             template: './src/hello.html',
             test: /^hello_result\.html$/
-            //filename: 'hello.html'
+            //filename: 'hello_result.html'
         }),
         new HtmlWebpackPlugin({
             filename: 'world_result.html',
@@ -112,7 +112,7 @@ module.exports = {
             rootpath: './src',
             template: './src/world.html',
             test: /^world_result\.html$/
-            //filename: 'world.html'
+            //filename: 'world_result.html'
         })
     ]
 };
