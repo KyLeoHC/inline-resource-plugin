@@ -8,7 +8,10 @@ export default {
         babel()
     ],
     external: [
-        'vm', 'path', 'lodash', 'inline-source',
+        'vm',
+        'path',
+        'lodash',
+        'inline-source',
         'webpack/lib/node/NodeTemplatePlugin',
         'webpack/lib/node/NodeTargetPlugin',
         'webpack/lib/LoaderTargetPlugin',
