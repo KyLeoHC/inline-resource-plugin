@@ -73,12 +73,14 @@ Available `options` include:
 - `compile`: If the file that you want to embed need to be compiled(such as ES6 or require), you can pass 'true'.(default `false`)
 - `compress`: enable/disable compression.(default `true`)
 - `rootpath`: path used for resolving inlineable paths.
-- `test`: the file which you want to execute embed task.If you have multiple templates,you'd better use regx to specify the template that you want to execute inline task.(non-required, default `/(\.html$)|(\.ejs$)/`)
 - `template`: the path of your template file.This option is used for finding out the files which need to embed into the template.(required)
-- `filename`: If you decide to use the other plugins such as HtmlWebpackPlugin to generate template file,you can ignore this option.Or you can pass the path and we will generate template file by ourselves.(non-required)
+- `test`: the file which you want to execute embed task.If you have multiple templates,you'd better use regx to specify the template that you want to execute inline task.
+- `filename`: If you decide to use the other plugins such as HtmlWebpackPlugin to generate template file,you can ignore this option.Or you can pass the path and we will generate template file by ourselves.
+    
+note: `test` and `filename` option at least one is needed(Refer to the example below).
 
 ```javascript
-//webpack.config.js
+// webpack.config.js example
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const InlineResourcePlugin = require('inline-resource-plugin');
 
@@ -102,7 +104,7 @@ module.exports = {
             compress: true,
             rootpath: './src',
             template: './src/hello.html', // Just keep the same with the 'template' option of HtmlWebpackPlugin
-            test: /^hello_result\.html$/ // A Regx that match the 'filename' option of HtmlWebpackPlugin
+            test: /^hello_result\.html$/ // A regular expression that match the 'filename' option of HtmlWebpackPlugin
         }),
         new InlineResourcePlugin({ // this InlineResourcePlugin is work alone(As it has supplied 'filename' option)
             compile: false,

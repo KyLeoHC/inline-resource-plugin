@@ -32,7 +32,7 @@
     "webpack": "^3.0.0"
   },
   "dependencies": {
-    "inline-source": "^5.2.0",
+    "inline-source": "^5.2.3",
     "lodash": "^4.17.4",
     "raw-loader": "^0.5.1"
   },

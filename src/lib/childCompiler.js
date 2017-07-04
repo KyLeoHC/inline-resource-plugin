@@ -52,7 +52,7 @@ class ChildCompiler {
     }
 
     getCompilerName(template) {
-        return `${config.PLUGIN_NAME}(v${version}) is compiling "${path.basename(template)}"`;
+        return `${config.PLUGIN_NAME}@${version} is compiling "${path.basename(template)}"`;
     }
 }
 

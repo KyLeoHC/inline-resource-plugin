@@ -16,8 +16,7 @@ class InlineResourcePlugin {
         this.startTime = Date.now();
         this.options = _.extend({
             compress: false,
-            compile: true,
-            test: /(\.html$)|(\.ejs$)/
+            compile: true
         }, options);
     }
 
@@ -159,7 +158,7 @@ class InlineResourcePlugin {
 
     apply(compiler) {
         compiler.plugin('make', (compilation, callback) => {
-            // Because tapable module doesn't provide the method of deleting special event methods array
+            // Because tapable module doesn't provide the method of deleting special event method array
             // so we can only delete it by this way...
             delete compiler._plugins[config.COMPILE_COMPLETE_EVENT];
             // reset _embedFiles and _assetMap
@@ -179,7 +178,7 @@ class InlineResourcePlugin {
             if (this.options.compile) {
                 this.findAndCompileInlineFile(this.options.template, compiler, compilation);
             }
-            //  run callback until the all childCompiler is finished
+            // run callback until the all childCompiler is finished
             compiler.applyPluginsParallel(config.COMPILE_COMPLETE_EVENT, callback);
         });
 

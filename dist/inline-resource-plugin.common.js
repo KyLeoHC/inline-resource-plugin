@@ -88,7 +88,7 @@ var ChildCompiler = function () {
     }, {
         key: 'getCompilerName',
         value: function getCompilerName(template) {
-            return config.PLUGIN_NAME + '(v' + version + ') is compiling "' + path.basename(template) + '"';
+            return config.PLUGIN_NAME + '@' + version + ' is compiling "' + path.basename(template) + '"';
         }
     }]);
     return ChildCompiler;
@@ -112,8 +112,7 @@ var InlineResourcePlugin = function () {
         this.startTime = Date.now();
         this.options = _.extend({
             compress: false,
-            compile: true,
-            test: /(\.html$)|(\.ejs$)/
+            compile: true
         }, options);
     }
 
@@ -281,7 +280,7 @@ var InlineResourcePlugin = function () {
             var _this5 = this;
 
             compiler.plugin('make', function (compilation, callback) {
-                // Because tapable module doesn't provide the method of deleting special event methods array
+                // Because tapable module doesn't provide the method of deleting special event method array
                 // so we can only delete it by this way...
                 delete compiler._plugins[config.COMPILE_COMPLETE_EVENT];
                 // reset _embedFiles and _assetMap
@@ -301,7 +300,7 @@ var InlineResourcePlugin = function () {
                 if (_this5.options.compile) {
                     _this5.findAndCompileInlineFile(_this5.options.template, compiler, compilation);
                 }
-                //  run callback until the all childCompiler is finished
+                // run callback until the all childCompiler is finished
                 compiler.applyPluginsParallel(config.COMPILE_COMPLETE_EVENT, callback);
             });
 
