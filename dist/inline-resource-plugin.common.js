@@ -19,7 +19,7 @@ var config = {
     PLUGIN_TEMPLATE_RESULT: 'INLINE-RESOURCE-PLUGIN-RESULT'
 };
 
-var version = "0.6.1";
+var version = "0.6.2";
 
 var classCallCheck = function (instance, Constructor) {
   if (!(instance instanceof Constructor)) {
