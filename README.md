@@ -127,3 +127,7 @@ compiler.plugin('inline-resource-plugin-html-after-emit', function (data, callba
   callback();
 });
 ```
+
+## License
+
+[MIT License](https://github.com/KyLeoHC/inline-resource-plugin/blob/master/LICENSE)
