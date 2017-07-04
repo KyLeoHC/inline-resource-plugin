@@ -26,7 +26,6 @@ class ChildCompiler {
         }
         childCompiler.apply(new SingleEntryPlugin(context, template));
 
-
         childCompiler.plugin('compilation', (compilation) => {
             if (compilation.cache) {
                 if (!compilation.cache[compilerName]) {
