@@ -40,13 +40,13 @@ class InlineResourcePlugin {
      * @returns {*}
      */
     initLoader(template, compiler) {
-        //'rules' option is support for webpack2
+        // 'rules' option is support for webpack2
         let moduleConfig = _.extend({preLoaders: [], loaders: [], postLoaders: [], rules: []}, compiler.options.module);
         let loaders = moduleConfig.preLoaders.concat(moduleConfig.loaders).concat(moduleConfig.postLoaders);
         loaders.forEach((loader) => {
                 if (loader.test.test(template)) {
-                    //if there exist a load for evaluating template
-                    //don't need another loader
+                    // if there exist a load for evaluating template
+                    // don't need another loader
                     this._templateLoader = '';
                 }
             }
@@ -79,39 +79,48 @@ class InlineResourcePlugin {
      * @param template
      * @param compiler
      * @param compilation
-     * @param callback
      */
-    findAndCompileInlineFile(template, compiler, compilation, callback) {
-        //Because tapable module doesn't provide the method of deleting special event methods array
-        //so we can only delete it by this way...
-        delete compiler._plugins[config.COMPILE_COMPLETE_EVENT];
+    findAndCompileInlineFile(template, compiler, compilation) {
         inlineSource.sync(template, _.extend({
             handlers: (source) => {
                 if (source.type == 'js') {
-                    //compile JS file
+                    // compile JS file
                     let outputOptions = {
                         filename: this.generateUniqueFileName(source.filepath)
                     };
                     if (globalReference[outputOptions.filename]) {
-                        //if the target file has been compile
-                        //just count and ignore it
-                        //don't compile again
+                        // if the target file has been compiled
+                        // just count and ignore it
+                        // don't compile again
                         globalReference[outputOptions.filename]++;
                     } else {
                         let childJSCompiler = ChildCompiler.create(source.filepath, compiler.context, outputOptions, compilation);
                         childJSCompiler.plugin('after-compile', (compilation, callback) => {
                             compilation.chunks.forEach((chunk) => {
-                                chunk.modules.forEach((module) => {
-                                    module.fileDependencies.forEach((filepath) => {
-                                        //record all inline files
-                                        //used for find out the change files(watch mode)
-                                        this._embedFiles.push(filepath);
-                                    });
-                                });
-                            });
+                                    if (chunk.forEachModule) {
+                                        // 'chunk.modules' in webpack 3.x is deprecated
+                                        chunk.forEachModule((module) => {
+                                            module.fileDependencies.forEach((filepath) => {
+                                                // record all inline files
+                                                // used for find out the change files(watch mode)
+                                                this._embedFiles.push(filepath);
+                                            });
+                                        });
+                                    } else if (chunk.modules) {
+                                        // webpack 1.x and 2.x
+                                        chunk.modules.forEach((module) => {
+                                            module.fileDependencies.forEach((filepath) => {
+                                                // record all inline files
+                                                // used for find out the change files(watch mode)
+                                                this._embedFiles.push(filepath);
+                                            });
+                                        });
+                                    }
+                                }
+                            );
                             callback();
                         });
-                        globalReference[outputOptions.filename] = 1;//init reference count
+                        globalReference[outputOptions.filename] = 1;// init reference count
                         compiler.plugin(config.COMPILE_COMPLETE_EVENT, childJSCompiler.runAsChild);
                     }
                     this._assetMap[source.filepath] = outputOptions.filename;
@@ -122,8 +131,6 @@ class InlineResourcePlugin {
         }, this.options, {
             compress: false
         }));
-        //run callback until the all childCompiler is finished
-        compiler.applyPluginsParallel(config.COMPILE_COMPLETE_EVENT, callback);
     }
 
     /**
@@ -152,41 +159,49 @@ class InlineResourcePlugin {
 
     apply(compiler) {
         compiler.plugin('make', (compilation, callback) => {
-            //reset _embedFiles and _assetMap
+            // Because tapable module doesn't provide the method of deleting special event methods array
+            // so we can only delete it by this way...
+            delete compiler._plugins[config.COMPILE_COMPLETE_EVENT];
+            // reset _embedFiles and _assetMap
             this._embedFiles = [];
             this._assetMap = {};
             if (this.options.filename) {
-                //compile html
+                // compile html
                 let fullTemplate = this.initLoader(this.options.template, compiler);
                 let outputOptions = {
                     filename: this.options.filename
                 };
                 let childHTMLCompiler = ChildCompiler.create(fullTemplate, compiler.context, outputOptions, compilation, true);
-                childHTMLCompiler.runAsChild();
+                compiler.plugin(config.COMPILE_COMPLETE_EVENT, childHTMLCompiler.runAsChild);
                 this._embedFiles.push(path.resolve(this.options.template));
             }
 
             if (this.options.compile) {
-                this.findAndCompileInlineFile(this.options.template, compiler, compilation, callback);
-            } else {
-                callback();
+                this.findAndCompileInlineFile(this.options.template, compiler, compilation);
             }
+            //  run callback until the all childCompiler is finished
+            compiler.applyPluginsParallel(config.COMPILE_COMPLETE_EVENT, callback);
         });
 
         compiler.plugin('emit', (compilation, callback) => {
             compilation.assets = _.extend({}, this._cacheTemplateFile, compilation.assets);
             Object.keys(compilation.assets).forEach((template) => {
-                if (this.options.test.test(template)) {
+                // if 'test' option is supplied, just use 'test' option
+                // otherwise use 'filename' option
+                if ((this.options.test && this.options.test.test(template)) ||
+                    (this.options.filename && this.options.filename === template)) {
+                    // match the template file
                     let asset = compilation.assets[template];
                     let buildContent = asset.source();
                     if (this.options.filename) {
-                        //if the template is generated by other plugins
-                        //don't evaluate the compile result
+                        //  if the template is generated by other plugins
+                        //  don't evaluate the compile result
                         buildContent = this.getTemplateCompileResult(buildContent);
-                        //only watch template file which are generated by us
+                        //  only watch template file which are generated by us
                         compilation.fileDependencies.push(path.resolve(this.options.template));
                     }
                     if (!asset.isCache) {
+                        // cache the template file
                         this._cacheTemplateFile[template] = ((content) => {
                             return {
                                 source: function () {
@@ -210,18 +225,18 @@ class InlineResourcePlugin {
                                         globalReference[key]--;
                                     }
                                     if (asset && globalReference[key] === 0) {
-                                        //don't generate the inline file
+                                        // don't generate the inline file
                                         delete compilation.assets[key];
                                         delete globalReference[key];
                                     }
                                 }
-                                //watch the inline file
+                                // watch the inline file
                                 compilation.fileDependencies.push(source.filepath);
                             }
                         }, this.options));
                     } catch (ex) {
-                        //Once we catch the JS parse error
-                        //just reset the 'globalReference' and delete the output file of us
+                        // Once we catch the JS parse error
+                        // just reset the 'globalReference' and delete the output file of us
                         compilation.errors.push(ex.toString());
                         Object.keys(globalReference).forEach(function (key) {
                             delete compilation.assets[key];
@@ -239,13 +254,13 @@ class InlineResourcePlugin {
             });
 
             compiler.plugin('done', () => {
-                //force a reset of the 'globalReference' value
+                // force a reset of the 'globalReference' value
                 globalReference = {};
             });
 
             if (this.detectChange(compilation)) {
-                //if content has been changed
-                //just let other plugins know that we have already recompiled file
+                // if content has been changed
+                // just let other plugins know that we have already recompiled file
                 compiler.applyPluginsAsyncWaterfall(config.AFTER_EMIT_EVENT, {}, () => {
                 });
             }

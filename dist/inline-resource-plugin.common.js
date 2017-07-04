@@ -19,6 +19,8 @@ var config = {
     PLUGIN_TEMPLATE_RESULT: 'INLINE-RESOURCE-PLUGIN-RESULT'
 };
 
+var version = "0.5.2";
+
 var classCallCheck = function (instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError("Cannot call a class as a function");
@@ -55,11 +57,10 @@ var ChildCompiler = function () {
             var childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
             childCompiler.context = context;
 
-            childCompiler.apply(new NodeTargetPlugin(), new SingleEntryPlugin(context, template), new LoaderTargetPlugin('node'));
-
             if (isTemplate) {
-                childCompiler.apply(new NodeTemplatePlugin(outputOptions), new LibraryTemplatePlugin(config.PLUGIN_TEMPLATE_RESULT, 'var'));
+                childCompiler.apply(new NodeTargetPlugin(), new LoaderTargetPlugin('node'), new NodeTemplatePlugin(outputOptions), new LibraryTemplatePlugin(config.PLUGIN_TEMPLATE_RESULT, 'var'));
             }
+            childCompiler.apply(new SingleEntryPlugin(context, template));
 
             childCompiler.plugin('compilation', function (compilation) {
                 if (compilation.cache) {
@@ -70,7 +71,7 @@ var ChildCompiler = function () {
                 }
             });
 
-            //save the original runAsChild method and export a new runAsChild method
+            // save the original runAsChild method and export a new runAsChild method
             childCompiler._runAsChildOriginal = childCompiler.runAsChild;
             childCompiler.runAsChild = function (callback) {
                 childCompiler._runAsChildOriginal(function (error, entries, childCompilation) {
@@ -87,7 +88,7 @@ var ChildCompiler = function () {
     }, {
         key: 'getCompilerName',
         value: function getCompilerName(template) {
-            return config.PLUGIN_NAME + ' is compiling \'' + path.basename(template) + '\'';
+            return config.PLUGIN_NAME + '(v' + version + ') is compiling "' + path.basename(template) + '"';
         }
     }]);
     return ChildCompiler;
@@ -144,13 +145,13 @@ var InlineResourcePlugin = function () {
         value: function initLoader(template, compiler) {
             var _this = this;
 
-            //'rules' option is support for webpack2
+            // 'rules' option is support for webpack2
             var moduleConfig = _.extend({ preLoaders: [], loaders: [], postLoaders: [], rules: [] }, compiler.options.module);
             var loaders = moduleConfig.preLoaders.concat(moduleConfig.loaders).concat(moduleConfig.postLoaders);
             loaders.forEach(function (loader) {
                 if (loader.test.test(template)) {
-                    //if there exist a load for evaluating template
-                    //don't need another loader
+                    // if there exist a load for evaluating template
+                    // don't need another loader
                     _this._templateLoader = '';
                 }
             });
@@ -185,44 +186,52 @@ var InlineResourcePlugin = function () {
          * @param template
          * @param compiler
          * @param compilation
-         * @param callback
          */
 
     }, {
         key: 'findAndCompileInlineFile',
-        value: function findAndCompileInlineFile(template, compiler, compilation, callback) {
+        value: function findAndCompileInlineFile(template, compiler, compilation) {
             var _this2 = this;
 
-            //Because tapable module doesn't provide the method of deleting special event methods array
-            //so we can only delete it by this way...
-            delete compiler._plugins[config.COMPILE_COMPLETE_EVENT];
             inlineSource.sync(template, _.extend({
                 handlers: function handlers(source) {
                     if (source.type == 'js') {
-                        //compile JS file
+                        // compile JS file
                         var outputOptions = {
                             filename: _this2.generateUniqueFileName(source.filepath)
                         };
                         if (globalReference[outputOptions.filename]) {
-                            //if the target file has been compile
-                            //just count and ignore it
-                            //don't compile again
+                            // if the target file has been compiled
+                            // just count and ignore it
+                            // don't compile again
                             globalReference[outputOptions.filename]++;
                         } else {
                             var childJSCompiler = ChildCompiler$1.create(source.filepath, compiler.context, outputOptions, compilation);
                             childJSCompiler.plugin('after-compile', function (compilation, callback) {
                                 compilation.chunks.forEach(function (chunk) {
-                                    chunk.modules.forEach(function (module) {
-                                        module.fileDependencies.forEach(function (filepath) {
-                                            //record all inline files
-                                            //used for find out the change files(watch mode)
-                                            _this2._embedFiles.push(filepath);
+                                    if (chunk.forEachModule) {
+                                        // 'chunk.modules' in webpack 3.x is deprecated
+                                        chunk.forEachModule(function (module) {
+                                            module.fileDependencies.forEach(function (filepath) {
+                                                // record all inline files
+                                                // used for find out the change files(watch mode)
+                                                _this2._embedFiles.push(filepath);
+                                            });
                                         });
-                                    });
+                                    } else if (chunk.modules) {
+                                        // webpack 1.x and 2.x
+                                        chunk.modules.forEach(function (module) {
+                                            module.fileDependencies.forEach(function (filepath) {
+                                                // record all inline files
+                                                // used for find out the change files(watch mode)
+                                                _this2._embedFiles.push(filepath);
+                                            });
+                                        });
+                                    }
                                 });
                                 callback();
                             });
-                            globalReference[outputOptions.filename] = 1; //init reference count
+                            globalReference[outputOptions.filename] = 1; // init reference count
                             compiler.plugin(config.COMPILE_COMPLETE_EVENT, childJSCompiler.runAsChild);
                         }
                         _this2._assetMap[source.filepath] = outputOptions.filename;
@@ -233,8 +242,6 @@ var InlineResourcePlugin = function () {
             }, this.options, {
                 compress: false
             }));
-            //run callback until the all childCompiler is finished
-            compiler.applyPluginsParallel(config.COMPILE_COMPLETE_EVENT, callback);
         }
 
         /**
@@ -274,41 +281,48 @@ var InlineResourcePlugin = function () {
             var _this5 = this;
 
             compiler.plugin('make', function (compilation, callback) {
-                //reset _embedFiles and _assetMap
+                // Because tapable module doesn't provide the method of deleting special event methods array
+                // so we can only delete it by this way...
+                delete compiler._plugins[config.COMPILE_COMPLETE_EVENT];
+                // reset _embedFiles and _assetMap
                 _this5._embedFiles = [];
                 _this5._assetMap = {};
                 if (_this5.options.filename) {
-                    //compile html
+                    // compile html
                     var fullTemplate = _this5.initLoader(_this5.options.template, compiler);
                     var outputOptions = {
                         filename: _this5.options.filename
                     };
                     var childHTMLCompiler = ChildCompiler$1.create(fullTemplate, compiler.context, outputOptions, compilation, true);
-                    childHTMLCompiler.runAsChild();
+                    compiler.plugin(config.COMPILE_COMPLETE_EVENT, childHTMLCompiler.runAsChild);
                     _this5._embedFiles.push(path.resolve(_this5.options.template));
                 }
 
                 if (_this5.options.compile) {
-                    _this5.findAndCompileInlineFile(_this5.options.template, compiler, compilation, callback);
-                } else {
-                    callback();
+                    _this5.findAndCompileInlineFile(_this5.options.template, compiler, compilation);
                 }
+                //  run callback until the all childCompiler is finished
+                compiler.applyPluginsParallel(config.COMPILE_COMPLETE_EVENT, callback);
             });
 
             compiler.plugin('emit', function (compilation, callback) {
                 compilation.assets = _.extend({}, _this5._cacheTemplateFile, compilation.assets);
                 Object.keys(compilation.assets).forEach(function (template) {
-                    if (_this5.options.test.test(template)) {
+                    // if 'test' option is supplied, just use 'test' option
+                    // otherwise use 'filename' option
+                    if (_this5.options.test && _this5.options.test.test(template) || _this5.options.filename && _this5.options.filename === template) {
+                        // match the template file
                         var asset = compilation.assets[template];
                         var buildContent = asset.source();
                         if (_this5.options.filename) {
-                            //if the template is generated by other plugins
-                            //don't evaluate the compile result
+                            //  if the template is generated by other plugins
+                            //  don't evaluate the compile result
                             buildContent = _this5.getTemplateCompileResult(buildContent);
-                            //only watch template file which are generated by us
+                            //  only watch template file which are generated by us
                             compilation.fileDependencies.push(path.resolve(_this5.options.template));
                         }
                         if (!asset.isCache) {
+                            // cache the template file
                             _this5._cacheTemplateFile[template] = function (content) {
                                 return {
                                     source: function source() {
@@ -332,18 +346,18 @@ var InlineResourcePlugin = function () {
                                             globalReference[key]--;
                                         }
                                         if (_asset && globalReference[key] === 0) {
-                                            //don't generate the inline file
+                                            // don't generate the inline file
                                             delete compilation.assets[key];
                                             delete globalReference[key];
                                         }
                                     }
-                                    //watch the inline file
+                                    // watch the inline file
                                     compilation.fileDependencies.push(source.filepath);
                                 }
                             }, _this5.options));
                         } catch (ex) {
-                            //Once we catch the JS parse error
-                            //just reset the 'globalReference' and delete the output file of us
+                            // Once we catch the JS parse error
+                            // just reset the 'globalReference' and delete the output file of us
                             compilation.errors.push(ex.toString());
                             Object.keys(globalReference).forEach(function (key) {
                                 delete compilation.assets[key];
@@ -361,13 +375,13 @@ var InlineResourcePlugin = function () {
                 });
 
                 compiler.plugin('done', function () {
-                    //force a reset of the 'globalReference' value
+                    // force a reset of the 'globalReference' value
                     globalReference = {};
                 });
 
                 if (_this5.detectChange(compilation)) {
-                    //if content has been changed
-                    //just let other plugins know that we have already recompiled file
+                    // if content has been changed
+                    // just let other plugins know that we have already recompiled file
                     compiler.applyPluginsAsyncWaterfall(config.AFTER_EMIT_EVENT, {}, function () {});
                 }
                 callback && callback();

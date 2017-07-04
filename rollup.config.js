@@ -1,3 +1,4 @@
+import json from 'rollup-plugin-json';
 import babel from 'rollup-plugin-babel';
 
 export default {
@@ -5,6 +6,7 @@ export default {
     dest: 'dist/inline-resource-plugin.common.js',
     format: 'cjs',
     plugins: [
+        json(),
         babel()
     ],
     external: [

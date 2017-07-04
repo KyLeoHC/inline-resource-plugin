@@ -1,12 +1,13 @@
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-var InlineResourcePlugin = require('../dist/inline-resource-plugin.common');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const InlineResourcePlugin = require('../dist/inline-resource-plugin.common');
+const path = require('path');
 
 module.exports = {
     entry: {
-        hello: './src/hello.js'
+        hello: './src/hello'
     },
     output: {
-        path: './build',
+        path: path.resolve(__dirname, 'build'),
         publicPath: '/inline-resource-plugin/example/build/',
         filename: '[name].js'
     },
@@ -22,20 +23,13 @@ module.exports = {
             rootpath: './src',
             template: './src/hello.html',
             test: /^hello_result\.html$/
-            //filename: 'hello.html'
-        }),
-        new HtmlWebpackPlugin({
-            filename: 'world_result.html',
-            template: './src/world.html',
-            inject: 'body'
         }),
         new InlineResourcePlugin({
-            compile: true,
+            compile: false,
             compress: true,
             rootpath: './src',
             template: './src/world.html',
-            test: /^world_result\.html$/
-            //filename: 'world.html'
+            filename: 'world_result.html'
         })
     ]
 };

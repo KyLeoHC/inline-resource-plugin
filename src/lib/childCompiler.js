@@ -1,3 +1,4 @@
+import {version} from '../../package.json';
 import path from 'path';
 import config from './config';
 import NodeTemplatePlugin from 'webpack/lib/node/NodeTemplatePlugin';
@@ -15,18 +16,16 @@ class ChildCompiler {
         let childCompiler = compilation.createChildCompiler(compilerName, outputOptions);
         childCompiler.context = context;
 
-        childCompiler.apply(
-            new NodeTargetPlugin(),
-            new SingleEntryPlugin(context, template),
-            new LoaderTargetPlugin('node')
-        );
-
         if (isTemplate) {
             childCompiler.apply(
+                new NodeTargetPlugin(),
+                new LoaderTargetPlugin('node'),
                 new NodeTemplatePlugin(outputOptions),
                 new LibraryTemplatePlugin(config.PLUGIN_TEMPLATE_RESULT, 'var')
             );
         }
+        childCompiler.apply(new SingleEntryPlugin(context, template));
+
 
         childCompiler.plugin('compilation', (compilation) => {
             if (compilation.cache) {
@@ -37,7 +36,7 @@ class ChildCompiler {
             }
         });
 
-        //save the original runAsChild method and export a new runAsChild method
+        // save the original runAsChild method and export a new runAsChild method
         childCompiler._runAsChildOriginal = childCompiler.runAsChild;
         childCompiler.runAsChild = (callback) => {
             childCompiler._runAsChildOriginal((error, entries, childCompilation) => {
@@ -53,7 +52,7 @@ class ChildCompiler {
     }
 
     getCompilerName(template) {
-        return config.PLUGIN_NAME + ' is compiling \'' + path.basename(template) + '\'';
+        return `${config.PLUGIN_NAME}(v${version}) is compiling "${path.basename(template)}"`;
     }
 }
 

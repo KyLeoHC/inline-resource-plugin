@@ -1,3 +1,7 @@
+<a href="https://www.npmjs.com/package/inline-resource-plugin">
+    <img src="https://img.shields.io/npm/v/inline-resource-plugin.svg?style=flat" alt="NPM version">
+</a>
+
 # inline-resource-plugin
 > A webpack plugin to embed css/js resource in the html with inline-source module.
 
@@ -75,12 +79,12 @@ Available `options` include:
 
 ```javascript
 //webpack.config.js
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-var InlineResourcePlugin = require('inline-resource-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const InlineResourcePlugin = require('inline-resource-plugin');
 
 module.exports = {
     entry: {
-        hello: './src/hello.js'
+        hello: './src/hello'
     },
     output: {
         path: './build',
@@ -93,26 +97,19 @@ module.exports = {
             template: './src/hello.html',
             inject: 'body'
         }),
-        new InlineResourcePlugin({
+        new InlineResourcePlugin({ // this InlineResourcePlugin is work with HtmlWebpackPlugin(As it has supplied 'test' option)
             compile: true,
-            compress: false,
+            compress: true,
             rootpath: './src',
-            template: './src/hello.html',
-            test: /^hello_result\.html$/
-            //filename: 'hello_result.html'
+            template: './src/hello.html', // Just keep the same with the 'template' option of HtmlWebpackPlugin
+            test: /^hello_result\.html$/ // A Regx that match the 'filename' option of HtmlWebpackPlugin
         }),
-        new HtmlWebpackPlugin({
-            filename: 'world_result.html',
-            template: './src/world.html',
-            inject: 'body'
-        }),
-        new InlineResourcePlugin({
-            compile: true,
-            compress: false,
+        new InlineResourcePlugin({ // this InlineResourcePlugin is work alone(As it has supplied 'filename' option)
+            compile: false,
+            compress: true,
             rootpath: './src',
             template: './src/world.html',
-            test: /^world_result\.html$/
-            //filename: 'world_result.html'
+            filename: 'world_result.html' // If you use 'filename' option, you don't need to supply 'test' option
         })
     ]
 };
