@@ -261,11 +261,6 @@ class InlineResourcePlugin {
                 }
             });
 
-            compiler.plugin('done', () => {
-                // force a reset of the 'globalReference' value
-                globalReference = {};
-            });
-
             if (this.detectChange(compilation)) {
                 // if content has been changed
                 // just let other plugins know that we have already recompiled file
@@ -273,6 +268,11 @@ class InlineResourcePlugin {
                 });
             }
             callback && callback();
+        });
+
+        compiler.plugin('done', () => {
+            // force a reset of the 'globalReference' value
+            globalReference = {};
         });
     }
 }

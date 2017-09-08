@@ -379,17 +379,17 @@ var InlineResourcePlugin = function () {
                     }
                 });
 
-                compiler.plugin('done', function () {
-                    // force a reset of the 'globalReference' value
-                    globalReference = {};
-                });
-
                 if (_this5.detectChange(compilation)) {
                     // if content has been changed
                     // just let other plugins know that we have already recompiled file
                     compiler.applyPluginsAsyncWaterfall(config.AFTER_EMIT_EVENT, {}, function () {});
                 }
                 callback && callback();
+            });
+
+            compiler.plugin('done', function () {
+                // force a reset of the 'globalReference' value
+                globalReference = {};
             });
         }
     }]);
