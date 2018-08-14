@@ -4,7 +4,7 @@
 
 # inline-resource-plugin
 A webpack plugin to embed css/js resource in the html with inline-source module.
-> This plugin only support webpack 1.x, 2.x and 3.x.For webpack 4.x or higher, you can try [this](https://github.com/KyLeoHC/inline-source-webpack-plugin).
+> :warning: This plugin only support webpack 1.x, 2.x and 3.x.For webpack 4.x or any webpack version, Use [inline-source-webpack-plugin](https://github.com/KyLeoHC/inline-source-webpack-plugin) instead.
 
 ## Install
 
